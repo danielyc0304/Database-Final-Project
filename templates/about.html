@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='about.css') }}"
+    />
+
+    <title>About {{ user_id }}</title>
+  </head>
+
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <img src="/" alt="Avatar" />
+
+        <h2>林祐丞</h2>
+        <p>房東</p>
+
+        <button>聯絡我</button>
+      </aside>
+
+      <main class="main">
+        <section class="about">
+          <h3>關於我</h3>
+
+          <p>
+            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo veniam
+            praesentium recusandae, autem aperiam impedit est? Quis sequi
+            excepturi enim laborum aperiam soluta consectetur dolore iusto quam,
+            inventore officiis quaerat!
+          </p>
+
+          <div class="info">
+            <div>15 房源</div>
+            <div>2025 年 5 月 15 日 加入</div>
+            <div>已認證</div>
+          </div>
+        </section>
+
+        <section class="properties">
+          <h3>我的房源</h3>
+
+          <div class="properties-list">
+            <div class="property">
+              <img src="/" alt="Modern Apartment" />
+
+              <div class="property-details">
+                <h4>透天套房</h4>
+                <p class="address">新竹市東區大學路1001號</p>
+                <p class="price">7,500 元/月</p>
+                <p class="room">1 房 1 衛</p>
+              </div>
+            </div>
+
+            <div class="property">
+              <img src="/" alt="Modern Apartment" />
+
+              <div class="property-details">
+                <h4>透天套房</h4>
+                <p class="address">新竹市東區大學路1001號</p>
+                <p class="price">7,500 元/月</p>
+                <p class="room">1 房 1 衛</p>
+              </div>
+            </div>
+          </div>
+
+          <button>查看所有房源</button>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
