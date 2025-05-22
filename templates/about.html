@@ -8,7 +8,7 @@
       href="{{ url_for('static', filename='about.css') }}"
     />
 
-    <title>About {{ user["user_fname"] + " " + user["user_lname"] }}</title>
+    <title>關於 {{ user["user_fname"] + " " + user["user_lname"] }}</title>
   </head>
 
   <body>
@@ -21,6 +21,7 @@
           {% if user["user_role"] == "Tenant" %} 租客 {% elif user["user_role"]
           == "Landlord" %} 房東 {% endif %}
         </p>
+        <p class="email">{{ user["user_email"]}}</p>
 
         <button>聯絡我</button>
       </aside>
@@ -52,7 +53,7 @@
           <div class="properties-list">
             {% for house in houses %}
             <div class="property">
-              <img src="/" alt="Modern Apartment" />
+              <img src="/" alt="{{ house['house_title'] }}" />
 
               <div class="property-details">
                 <h4>{{ house["house_title"] }}</h4>
