@@ -49,5 +49,29 @@ def about(user_id):
     return render_template("about.html", user=user, login=login, houses=houses)
 
 
+@app.route("/house/<house_id>")
+def house(house_id):
+    house = (
+        supabase.table("house").select("*").eq("house_id", house_id).execute().data[0]
+    )
+    house["full_address"] = (
+        supabase.table("address")
+        .select("full_address")
+        .eq("address_id", house["house_address_id"])
+        .execute()
+        .data[0]["full_address"]
+    )
+    house["price_per_month"] = f"{house['price_per_month']:,}"
+    landlord = (
+        supabase.table("users")
+        .select("*")
+        .eq("user_id", house["owner_id"])
+        .execute()
+        .data[0]
+    )
+
+    return render_template("house.html", house=house, landlord=landlord)
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
