@@ -20,7 +20,33 @@ def index():
 
 @app.route("/about/<user_id>")
 def about(user_id):
-    return render_template("about.html")
+    user = supabase.table("users").select("*").eq("user_id", user_id).execute().data[0]
+    login = (
+        supabase.table("user_login")
+        .select("*")
+        .eq("user_id", user_id)
+        .execute()
+        .data[0]
+    )
+    houses = (
+        supabase.table("house")
+        .select("*")
+        .eq("owner_id", user_id)
+        .limit(5)
+        .execute()
+        .data
+    )
+    for house in houses:
+        house["full_address"] = (
+            supabase.table("address")
+            .select("full_address")
+            .eq("address_id", house["house_address_id"])
+            .execute()
+            .data[0]["full_address"]
+        )
+        house["price_per_month"] = f"{house['price_per_month']:,}"
+
+    return render_template("about.html", user=user, login=login, houses=houses)
 
 
 if __name__ == "__main__":

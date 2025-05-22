@@ -8,7 +8,7 @@
       href="{{ url_for('static', filename='about.css') }}"
     />
 
-    <title>About {{ user_id }}</title>
+    <title>About {{ user["user_fname"] + " " + user["user_lname"] }}</title>
   </head>
 
   <body>
@@ -16,8 +16,11 @@
       <aside class="sidebar">
         <img src="/" alt="Avatar" />
 
-        <h2>林祐丞</h2>
-        <p>房東</p>
+        <h2>{{ user["user_fname"] + " " + user["user_lname"] }}</h2>
+        <p>
+          {% if user["user_role"] == "Tenant" %} 租客 {% elif user["user_role"]
+          == "Landlord" %} 房東 {% endif %}
+        </p>
 
         <button>聯絡我</button>
       </aside>
@@ -34,8 +37,11 @@
           </p>
 
           <div class="info">
-            <div>15 房源</div>
-            <div>2025 年 5 月 15 日 加入</div>
+            <div>{{ houses | length }} 房源</div>
+            <div>
+              {{ login["created_time"][0:4] }} 年 {{ login["created_time"][5:7]
+              }} 月 {{ login["created_time"][8:10] }} 日 加入
+            </div>
             <div>已認證</div>
           </div>
         </section>
@@ -44,27 +50,17 @@
           <h3>我的房源</h3>
 
           <div class="properties-list">
+            {% for house in houses %}
             <div class="property">
               <img src="/" alt="Modern Apartment" />
 
               <div class="property-details">
-                <h4>透天套房</h4>
-                <p class="address">新竹市東區大學路1001號</p>
-                <p class="price">7,500 元/月</p>
-                <p class="room">1 房 1 衛</p>
+                <h4>{{ house["house_title"] }}</h4>
+                <p class="address">{{ house["full_address"] }}</p>
+                <p class="price">{{ house["price_per_month"] }} 元/月</p>
               </div>
             </div>
-
-            <div class="property">
-              <img src="/" alt="Modern Apartment" />
-
-              <div class="property-details">
-                <h4>透天套房</h4>
-                <p class="address">新竹市東區大學路1001號</p>
-                <p class="price">7,500 元/月</p>
-                <p class="room">1 房 1 衛</p>
-              </div>
-            </div>
+            {% endfor %}
           </div>
 
           <button>查看所有房源</button>
