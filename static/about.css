@@ -110,8 +110,7 @@ body {
   font-size: 0.9rem;
 }
 
-.property-details .price,
-.property-details .room {
+.property-details .price {
   color: #696d74;
   font-size: 0.9rem;
 }
