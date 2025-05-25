@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='about.css') }}"
+    />
+
+    <title>關於 {{ user["user_fname"] + " " + user["user_lname"] }}</title>
+  </head>
+
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <img src="/" alt="Avatar" />
+
+        <h2>{{ user["user_fname"] + " " + user["user_lname"] }}</h2>
+        <p>
+          {% if user["user_role"] == "Tenant" %} 租客 {% elif user["user_role"]
+          == "Landlord" %} 房東 {% endif %}
+        </p>
+        <p class="email">{{ user["user_email"] }}</p>
+
+        <button>聯絡我</button>
+      </aside>
+
+      <main class="main">
+        <section class="about">
+          <h3>關於我</h3>
+
+          <p>
+            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo veniam
+            praesentium recusandae, autem aperiam impedit est? Quis sequi
+            excepturi enim laborum aperiam soluta consectetur dolore iusto quam,
+            inventore officiis quaerat!
+          </p>
+
+          <div class="info">
+            <div>{{ houses | length }} 房源</div>
+            <div>
+              {{ login["created_time"][0:4] }} 年 {{ login["created_time"][5:7]
+              }} 月 {{ login["created_time"][8:10] }} 日 加入
+            </div>
+            <div>已認證</div>
+          </div>
+        </section>
+
+        <section class="properties">
+          <h3>我的房源</h3>
+
+          <div class="properties-list">
+            {% for house in houses %}
+            <div class="property">
+              <img src="/" alt="{{ house['house_title'] }}" />
+
+              <div class="property-details">
+                <h4>{{ house["house_title"] }}</h4>
+                <p class="address">{{ house["full_address"] }}</p>
+                <p class="price">{{ house["price_per_month"] }} 元/月</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <button>查看所有房源</button>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
