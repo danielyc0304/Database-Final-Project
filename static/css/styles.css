@@ -1,0 +1,275 @@
+/* style.css */
+
+body {
+    font-family: sans-serif;
+    margin: 0;
+    line-height: 1.6; /* 增加行高提高可讀性 */
+    color: #333; /* 設定基本文字顏色 */
+    background-color: #f4f4f4; /* 頁面背景色 */
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto; /* 讓容器置中 */
+    padding: 0 15px;
+}
+
+.site-header {
+    background-color: #007bff; /* 頂部導航背景色 */
+    color: white;
+    padding: 15px 0;
+    margin-bottom: 20px;
+}
+
+.site-header h1 {
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.main-layout {
+    display: flex; /* 使用 Flexbox 進行側邊欄和主要內容佈局 */
+    gap: 20px; /* Flexbox 項目之間的間距 */
+}
+
+.sidebar {
+    width: 250px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    flex-shrink: 0; /* 防止側邊欄縮小 */
+    background-color: #fff; /* 側邊欄背景色 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 添加陰影效果 */
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    margin-bottom: 8px;
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: #555; /* 側邊欄連結顏色 */
+    display: block;
+    padding: 8px 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease; /* 添加過渡動畫 */
+}
+ .sidebar a:hover {
+    color: #007bff;
+    background-color: #e9ecef; /* 滑鼠懸停背景色變化 */
+}
+
+.sidebar a.active {
+    background-color: #007bff; /* 選中項目的背景色 */
+    color: white; /* 選中項目的文字顏色 */
+    font-weight: bold; /* 加粗文字 */
+}
+
+.main-content {
+    flex-grow: 1; /* 主要內容佔據剩餘空間 */
+}
+
+.search-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.search-section h3 {
+    margin-top: 0;
+    font-size: 1.4em;
+}
+
+.search-section form {
+    display: flex; /* 讓輸入框和按鈕並排 */
+    gap: 10px;
+}
+
+.search-section input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex-grow: 1; /* 輸入框佔據大部分空間 */
+    font-size: 1em;
+}
+ .search-section button {
+    padding: 10px 20px;
+    background-color: #28a745; /* 綠色按鈕 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+ }
+ .search-section button:hover {
+     background-color: #218838;
+ }
+
+
+.listings-section h3 {
+    margin-top: 0;
+    font-size: 1.4em;
+    margin-bottom: 15px;
+}
+
+.listing-grid {
+    display: grid;
+    /* 響應式列：自動填充，最小寬度 250px，最大佔據可用空間 */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.listing-item {
+    border: 1px solid #ddd;
+    border-radius: 8px; /* 更圓潤的邊角 */
+    overflow: hidden; /* 確保圖片圓角顯示 */
+    text-decoration: none;
+    color: inherit;
+    display: flex; /* 使用 Flexbox 排列圖片和文字內容 */
+    flex-direction: column; /* 子元素垂直排列 */
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 列表項陰影 */
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* 添加懸停動畫 */
+}
+
+.listing-item:hover {
+    transform: translateY(-5px); /* 向上移動一點 */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* 加強陰影 */
+}
+
+.listing-item img {
+    width: 100%;
+    height: 200px; /* 固定圖片高度 */
+    object-fit: cover;
+    border-bottom: 1px solid #eee; /* 圖片下方邊界 */
+}
+
+.listing-item .listing-info {
+     padding: 15px; /* 內邊距 */
+     flex-grow: 1; /* 資訊區塊佔滿剩餘高度 */
+     display: flex;
+     flex-direction: column;
+}
+
+.listing-item h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.2em;
+    color: #007bff; /* 標題顏色 */
+}
+
+.listing-item p {
+    margin: 0 0 5px 0;
+    font-size: 0.95em;
+    color: #555;
+}
+
+.site-footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px;
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+/* 可以根據需要添加更多響應式設計的 media queries */
+@media (max-width: 768px) {
+    .main-layout {
+        flex-direction: column; /* 在小螢幕上將側邊欄和主要內容垂直堆疊 */
+    }
+
+    .sidebar {
+        width: 100%; /* 側邊欄佔滿寬度 */
+        margin-right: 0;
+        margin-bottom: 20px; /* 在堆疊時增加底部間距 */
+    }
+
+    .listing-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 小螢幕房屋列表列數調整 */
+        gap: 15px;
+    }
+}
+
+.form-message {
+    margin-top: 8px;
+    font-size: 0.95em;
+}
+
+.add-house-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.plus-icon {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100vw; /* 修正為 vw 單位 */
+    height: 100vh; /* 修正為 vh 單位 */
+    background-color: rgba(0,0,0,0.4);
+    display: flex; /* 啟用 Flexbox */
+    justify-content: center; /* 水平置中 */
+    align-items: center; /* 垂直置中 */
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px; /* 限制最大寬度 */
+    max-height: 80vh; /* 限制最大高度，避免超出螢幕 */
+    overflow: auto; /* 允許內容溢出時滾動 */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.house-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.no-houses {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 20px;
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 90%; /* 在小螢幕上增加寬度 */
+    }
+}

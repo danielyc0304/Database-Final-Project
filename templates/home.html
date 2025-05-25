@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <title>租屋網 | 首頁</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    
+    <header class="site-header">
+        <div class="container">
+            <h1>交大租屋網</h1>
+            </div>
+    </header>
+
+    <div class="container main-layout">
+        <aside class="sidebar">
+            <h2>Menu</h2>
+            <nav>
+                <ul>
+                    <li><a href="#" id="homeLink" class="active">首頁</a></li>
+                    <li><a href="#" id="loginLink">登入</a></li>
+                    <li><a href="#" id="signupLink">註冊</a></li>
+                    </ul>
+            </nav>
+            </aside>
+
+        <main class="main-content" id="mainContent">   
+
+        </main>
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 租屋網. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module" src="{{ url_for('static', filename='js/home.js') }}"></script>
+
+</body>
+</html>
+
+<!--<!DOCTYPE html>
+<html>
+<head>
+    <title>租屋網|首頁</title>
+</head>
+<body>
+    <h2>租屋網</h2>
+    <p><a href="/login">Log in</a></p>
+    <p><a href="/signup">Sign up</a></p>
+</body>
+</html>-->
+
+<!--<section class="search-section">
+                <h3>找房子</h3>
+                <form action="/search" method="get">
+                    <input type="text" name="query" placeholder="輸入地區、類型或關鍵字...">
+                    <button type="submit">搜尋</button>
+                </form>
+            </section>
+
+            <section class="listings-section">
+                <h3>房屋推薦</h3>
+                <div class="listing-grid">
+                    <a href="/listing/123" class="listing-item">
+                        <img src="placeholder-house1.jpg" alt="房屋圖片1">
+                        <h4>市中心溫馨套房</h4>
+                        <p>地點：台北市大安區</p>
+                        <p>價格：$15,000/月</p>
+                        <p>類型：套房</p>
+                    </a>
+
+                    <a href="/listing/124" class="listing-item">
+                        <img src="placeholder-house2.jpg" alt="房屋圖片2">
+                        <h4>近捷運三房兩廳</h4>
+                        <p>地點：新北市板橋區</p>
+                        <p>價格：$30,000/月</p>
+                        <p>類型：整層住家</p>
+                    </a>
+
+                     <a href="/listing/125" class="listing-item">
+                        <img src="placeholder-house3.jpg" alt="房屋圖片3">
+                        <h4>淡水河景小豪宅</h4>
+                        <p>地點：新北市淡水區</p>
+                        <p>價格：$45,000/月</p>
+                        <p>類型：華廈/大樓</p>
+                    </a>
+
+                    </div>
+            </section>
+                    -->
