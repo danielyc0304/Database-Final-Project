@@ -73,10 +73,6 @@ def house(house_id):
     return render_template("house.html", house=house, landlord=landlord)
 
 
-if __name__ == "__main__":
-    app.run(debug=True, port=8080)
-
-
 @app.route("/")
 def home():
     # 假設 home.html 存在
@@ -92,6 +88,9 @@ def logout():
 @app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.json  # 接收 JSON 格式的請求
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
+
     username = data.get("username")
     password = data.get("password")
 
@@ -141,6 +140,8 @@ def api_login():
             )
         else:
             return jsonify({"error": "No role found."}), 401
+    else:
+        return jsonify({"error": "Invalid credentials. Try again."}), 401
 
 
 @app.route("/signup", methods=["GET"])
@@ -151,6 +152,9 @@ def signup_page():
 @app.route("/api/check_username", methods=["POST"])
 def check_username():
     data = request.json
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
+
     username = data.get("username")
     # 查詢 user_login 是否有這個 user_account
     exist = (
@@ -174,6 +178,8 @@ def api_signup():
     else:
         data = request.json
         files = None
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
 
     user_account = data.get("account")
     user_password = data.get("password")
@@ -187,6 +193,8 @@ def api_signup():
     required_fields = [last_name, first_name, nickname, email, role]
     if not all(required_fields):
         return jsonify({"error": "請完整填寫所有必填欄位"}), 400
+    if user_password is None:
+        return jsonify({"error": "密碼為必填欄位"}), 400
 
     # 產生鹽值並加密密碼
     salt = bcrypt.gensalt()
@@ -212,7 +220,11 @@ def api_signup():
     if files and "avatar" in files:
         avatar = files["avatar"]
         # 產生唯一檔名
-        filename = f"{user_account}_{int(datetime.datetime.now().timestamp())}.{avatar.filename.rsplit('.', 1)[-1]}"
+        if avatar.filename and "." in avatar.filename:
+            ext = avatar.filename.rsplit(".", 1)[-1]
+        else:
+            ext = "jpg"  # default extension if filename is missing or has no extension
+        filename = f"{user_account}_{int(datetime.datetime.now().timestamp())}.{ext}"
         # 上傳到 Supabase Storage
         file_bytes = avatar.read()  # 讀成 bytes
         res_upload = supabase.storage.from_("dbfinal-avatars").upload(
@@ -263,6 +275,8 @@ def add_house():
 
     data = request.json
     landlord_account = session["user_id"]
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
 
     # 1. 先新增 ADDRESS
     address_data = {
@@ -363,5 +377,4 @@ def get_houses():
 
 
 if __name__ == "__main__":
-    # 當在本地運行時，啟用除錯模式
-    app.run(debug=True)
+    app.run(debug=True, port=8080)
