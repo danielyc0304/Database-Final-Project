@@ -29,7 +29,7 @@ const contentMap = {
                             <p>類型：整層住家</p>
                         </a>
 
-                            <a href="/listing/125" class="listing-item">
+                        <a href="/listing/125" class="listing-item">
                             <img src="placeholder-house3.jpg" alt="房屋圖片3">
                             <h4>淡水河景小豪宅</h4>
                             <p>地點：新北市淡水區</p>
@@ -121,9 +121,9 @@ const contentMap = {
                     <input type="number" id="price_per_month" required><br><br>
                     <label>房屋類型：</label>
                     <select id="house_type" required>
-                        <option value="APARTMENT">APARTMENT</option>
-                        <option value="SUITE">SUITE</option>
-                        <option value="ROOM">ROOM</option>
+                        <option value="APARTMENT">公寓</option>
+                        <option value="SUITE">套房</option>
+                        <option value="ROOM">雅房</option>
                         <option value="HOUSE">HOUSE</option>
                         <option value="OTHER">OTHER</option>
                     </select><br><br>
@@ -194,7 +194,6 @@ function setupLandlordFunctions() {
         e.preventDefault();
 
         const formData = {
-            country: document.getElementById('country').value,
             city: document.getElementById('city').value,
             district: document.getElementById('district').value,
             road: document.getElementById('road').value,
@@ -202,7 +201,14 @@ function setupLandlordFunctions() {
             alley: document.getElementById('alley').value,
             number: document.getElementById('number').value,
             zip_code: document.getElementById('zip_code').value,
-            full_address: document.getElementById('full_address').value,
+            full_address: String(
+                document.getElementById('city').value + 
+                document.getElementById('district').value + 
+                document.getElementById('road').value + 
+                document.getElementById('lane').value + 
+                document.getElementById('alley').value + 
+                document.getElementById('number').value
+            ),
             house_title: document.getElementById('houseName').value,
             house_desc: document.getElementById('houseDescription').value,
             //house_price: document.getElementById('house_price').value,
@@ -220,6 +226,8 @@ function setupLandlordFunctions() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
+
+        //country: document.getElementById('country').value
 
         if (response.ok) {
             alert('房屋新增成功！');

@@ -266,15 +266,15 @@ def add_house():
 
     # 1. 先新增 ADDRESS
     address_data = {
-        "country": data.get("country"),
-        "city": data.get("city"),
-        "distrit": data.get("district"),
-        "road": data.get("road"),
-        "lane": data.get("lane"),
-        "alley": data.get("alley"),
-        "number": data.get("number"),
-        "zip_code": data.get("zip_code"),
-        "full_address": data.get("full_address"),
+        'country': "台灣",
+        'city': data.get('city'),
+        'distrit': data.get('district'),
+        'road': data.get('road'),
+        'lane': data.get('lane'),
+        'alley': data.get('alley'),
+        'number': data.get('number'),
+        'zip_code': data.get('zip_code'),
+        'full_address': data.get('full_address')
     }
     res_address = supabase.table("address").insert(address_data).execute()
     if not res_address.data:
