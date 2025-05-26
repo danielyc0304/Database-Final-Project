@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import os
 from supabase import create_client
 
+from datetime import timedelta
+
 import bcrypt
 import datetime
 
@@ -12,6 +14,11 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
+app.permanent_session_lifetime = timedelta(days=7)
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
 
 url: str = os.environ.get("SUPABASE_URL") or ""
 key: str = os.environ.get("SUPABASE_KEY") or ""
@@ -73,10 +80,6 @@ def house(house_id):
     return render_template("house.html", house=house, landlord=landlord)
 
 
-if __name__ == "__main__":
-    app.run(debug=True, port=8080)
-
-
 @app.route("/")
 def home():
     # 假設 home.html 存在
@@ -113,8 +116,7 @@ def api_login():
         supabase.table("user_login").update(
             {"account_status": "ACTIVE", "last_login_time": now}
         ).eq("user_account", username).execute()
-        # 設定 session
-        session["user_id"] = username
+        
         # 先查 user_login 拿 user_id
         login_res = (
             supabase.table("user_login")
@@ -126,6 +128,8 @@ def api_login():
             return jsonify({"error": "Invalid credentials. Try again."}), 401
 
         user_id = login_res.data[0]["user_id"]
+        session["user_id"] = user_id
+        session["username"] = username
 
         # 再查 users 拿 user_role
         role_res = (
@@ -262,7 +266,7 @@ def add_house():
         return jsonify({"error": "未授權"}), 403
 
     data = request.json
-    landlord_account = session["user_id"]
+    landlord_account = session["username"]
 
     # 1. 先新增 ADDRESS
     address_data = {
@@ -339,7 +343,7 @@ def get_houses():
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
-    landlord_account = session["user_id"]
+    landlord_account = session["username"]
 
     # 1. 先用 landlord_account (user_account) 去 users table 查 user_id
     user_res = (
@@ -361,7 +365,85 @@ def get_houses():
     )
     return jsonify(res.data)
 
+#房東點選編輯房屋
+@app.route("/api/houses/<house_id>", methods=["GET"])
+def get_house(house_id):
+    if "user_id" not in session or session.get("role") != "Landlord":
+        return jsonify({"error": "未授權"}), 403
+
+    res = (
+        supabase.table("house")
+        .select("*, address:house_address_id(*)")
+        .eq("house_id", house_id)
+        .execute()
+    )
+    if not res.data:
+        return jsonify({"error": "找不到房屋"}), 404
+    return jsonify(res.data[0])
+
+#房東確認更新房屋資訊
+@app.route("/api/houses/<house_id>", methods=["PUT"])
+def update_house(house_id):
+    if "user_id" not in session or session.get("role") != "Landlord":
+        return jsonify({"error": "未授權"}), 403
+
+    data = request.json
+
+    # 先更新 address
+    address_data = {
+        'city': data.get('city'),
+        'distrit': data.get('district'),
+        'road': data.get('road'),
+        'lane': data.get('lane'),
+        'alley': data.get('alley'),
+        'number': data.get('number'),
+        'zip_code': data.get('zip_code'),
+        'full_address': data.get('full_address')
+    }
+    # 查出 house_address_id
+    house_res = supabase.table("house").select("house_address_id").eq("house_id", house_id).execute()
+    if not house_res.data:
+        return jsonify({"error": "找不到房屋"}), 404
+    address_id = house_res.data[0]["house_address_id"]
+    supabase.table("address").update(address_data).eq("address_id", address_id).execute()
+
+    # 再更新 house
+    house_data = {
+        "house_title": data.get("house_title"),
+        "house_desc": data.get("house_desc"),
+        "price_per_month": data.get("price_per_month"),
+        "house_type": data.get("house_type"),
+        "house_status": data.get("house_status")
+    }
+    supabase.table("house").update(house_data).eq("house_id", house_id).execute()
+
+    return jsonify({"message": "房屋更新成功"})
+
+#首頁顯示房屋
+@app.route("/api/home_houses", methods=["GET"])
+def get_home_houses():
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 6))
+    city = request.args.get("city")
+    district = request.args.get("district")
+
+    # 先查 address_id
+    address_query = supabase.table("address").select("address_id")
+    if city:
+        address_query = address_query.eq("city", city)
+    if district:
+        address_query = address_query.eq("distrit", district)  # 注意你的欄位名是 distrit
+    address_ids = [a["address_id"] for a in address_query.execute().data]
+
+    query = supabase.table("house").select("house_id, house_title, price_per_month, house_type, house_address_id, address:house_address_id(full_address)")
+    if city or district:
+        if address_ids:
+            query = query.in_("house_address_id", address_ids)
+        else:
+            return jsonify({"houses": [], "total": 0})
+    total = len(query.execute().data)
+    res = query.order("created_time", desc=True).range((page-1)*page_size, page*page_size-1).execute()
+    return jsonify({"houses": res.data, "total": total})
 
 if __name__ == "__main__":
-    # 當在本地運行時，啟用除錯模式
-    app.run(debug=True)
+    app.run(debug=True, port=8080)
