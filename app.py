@@ -1,3 +1,4 @@
+from time import sleep
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 
 from dotenv import load_dotenv
@@ -97,8 +98,14 @@ def house(house_id):
         .execute()
         .data
     )
+    notes = (
+        supabase.table("view_note").select("*").eq("house_id", house_id).execute().data
+    )
+
+    print(notes)
+
     return render_template(
-        "house.html", house=house, landlord=landlord, media_list=media_list
+        "house.html", house=house, landlord=landlord, media_list=media_list, notes=notes
     )
 
 
@@ -582,6 +589,52 @@ def get_home_houses():
         )
 
     return jsonify({"houses": res.data, "total": total})
+
+
+@app.route("/api/add_note", methods=["POST"])
+def add_note_route():
+    data = request.get_json()
+    house_id = data.get("house_id")
+    content = data.get("content")
+    user_id = session.get("user_id")  # 從 session 獲取 user_id
+
+    if not user_id:
+        return jsonify({"message": "使用者未登入"}), 401  # Unauthorized
+
+    if not house_id or not content:
+        return jsonify({"message": "缺少房屋ID或備註內容"}), 400
+
+    try:
+        note_data = {
+            "house_id": house_id,
+            "user_id": user_id,
+            "note_content": content,
+            "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        # 假設你的備註表格叫做 'notes'
+        res_note = supabase.table("view_note").insert(note_data).execute()
+
+        if not res_note.data:
+            return jsonify({"message": "新增備註時資料庫錯誤"}), 500
+
+        new_note = res_note.data[0]
+        return (
+            jsonify(
+                {
+                    "id": new_note.get("note_id"),  # 確保你的 notes 表有 id 主鍵並會返回
+                    "content": new_note.get("note_content"),
+                    "created_at": new_note.get(
+                        "created_time"
+                    ),  # 或者從 note_data 取 datetime.datetime.now...
+                    "user_id": new_note.get("user_id"),
+                }
+            ),
+            201,
+        )
+    except Exception as e:
+        # Log the exception for debugging
+        app.logger.error(f"Error adding note: {e}")
+        return jsonify({"message": f"新增備註時發生伺服器錯誤: {e}"}), 500
 
 
 if __name__ == "__main__":
