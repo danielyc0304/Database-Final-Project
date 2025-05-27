@@ -54,6 +54,15 @@ def about(user_id):
             .data[0]["full_address"]
         )
         house["price_per_month"] = f"{house['price_per_month']:,}"
+        house["media_url"] = (
+            supabase.table("house_media")
+            .select("media_url")
+            .eq("house_id", house["house_id"])
+            .order("order_index")
+            .execute()
+            .data[0]["media_url"]
+        )
+    print(house)
 
     return render_template("about.html", user=user, login=login, houses=houses)
 

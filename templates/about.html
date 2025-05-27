@@ -14,7 +14,7 @@
   <body>
     <div class="container">
       <aside class="sidebar">
-        <img src="/" alt="Avatar" />
+        <img src="{{ user['user_avatar_url'] }}" alt="Avatar" />
 
         <h2>{{ user["user_fname"] + " " + user["user_lname"] }}</h2>
         <p>
@@ -53,7 +53,10 @@
           <div class="properties-list">
             {% for house in houses %}
             <div class="property">
-              <img src="/" alt="{{ house['house_title'] }}" />
+              <img
+                src="{{ house['media_url'] }}"
+                alt="{{ house['house_title'] }}"
+              />
 
               <div class="property-details">
                 <h4>{{ house["house_title"] }}</h4>
