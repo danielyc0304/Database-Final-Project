@@ -51,8 +51,8 @@ export function attachSignupFormHandler() {
             <label>暱稱*：</label><br>
             <input type="text" id="nickname_signup"><br><br>
             <label>信箱：</label><br>
-            <input type="email" id="email_signup" required><br><br>
-            <label>腳色*：</label><br>
+            <input type="email" id="email_signup"><br><br>
+            <label>Role*：</label><br>
             <select id="role_signup" required>
                 <option value="">請選擇</option>
                 <option value="Tenant">租客</option>

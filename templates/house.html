@@ -18,7 +18,12 @@
         <p>{{ house["full_address"] }}</p>
       </div>
 
-      <div class="media"><img src="/" alt="{{ house['house_title'] }}" /></div>
+      <!--<div class="media"><img src="/" alt="{{ house['house_title'] }}" /></div>-->
+      <div class="media-list">
+        {% for media in media_list %}
+          <img src="{{ media.media_url }}" alt="房屋圖片">
+        {% endfor %}
+      </div>
 
       <div class="info">
         <div class="price">{{ house["price_per_month"] }} 元/月</div>
@@ -26,10 +31,7 @@
         <div class="about">
           <h3>關於</h3>
           <p>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsum
-            nostrum recusandae distinctio architecto aperiam quaerat
-            voluptatibus rem, minima molestiae ipsa repellendus ab tempora
-            sapiente eaque doloremque. Tenetur harum excepturi placeat.
+            {{ house["house_desc"] }} 
           </p>
         </div>
 
@@ -49,7 +51,9 @@
                 </div>
               </div>
 
-              <button>聯絡我</button>
+              <a href="/about/{{ landlord['user_id'] }}" target="_blank">
+                <button>聯絡我</button>
+              </a>
             </div>
           </div>
         </div>
