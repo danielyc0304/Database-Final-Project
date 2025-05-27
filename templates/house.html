@@ -21,7 +21,7 @@
       <!--<div class="media"><img src="/" alt="{{ house['house_title'] }}" /></div>-->
       <div class="media-list">
         {% for media in media_list %}
-          <img src="{{ media.media_url }}" alt="房屋圖片">
+        <img src="{{ media.media_url }}" alt="房屋圖片" />
         {% endfor %}
       </div>
 
@@ -30,9 +30,7 @@
 
         <div class="about">
           <h3>關於</h3>
-          <p>
-            {{ house["house_desc"] }} 
-          </p>
+          <p>{{ house["house_desc"] }}</p>
         </div>
 
         <div class="contact">
@@ -41,7 +39,7 @@
 
             <div class="landlord">
               <div class="landlord-info">
-                <img src="/" alt="Avatar" />
+                <img src="{{ landlord['user_avatar_url'] }}" alt="Avatar" />
 
                 <div class="more-info">
                   <h4>

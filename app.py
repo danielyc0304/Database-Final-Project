@@ -16,9 +16,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 app.permanent_session_lifetime = timedelta(days=7)
 
+
 @app.before_request
 def make_session_permanent():
     session.permanent = True
+
 
 url: str = os.environ.get("SUPABASE_URL") or ""
 key: str = os.environ.get("SUPABASE_KEY") or ""
@@ -78,8 +80,17 @@ def house(house_id):
     )
 
     # 查詢所有圖片
-    media_list = supabase.table("house_media").select("*").eq("house_id", house_id).order("order_index").execute().data
-    return render_template("house.html", house=house, landlord=landlord, media_list=media_list)
+    media_list = (
+        supabase.table("house_media")
+        .select("*")
+        .eq("house_id", house_id)
+        .order("order_index")
+        .execute()
+        .data
+    )
+    return render_template(
+        "house.html", house=house, landlord=landlord, media_list=media_list
+    )
 
 
 @app.route("/")
@@ -278,25 +289,25 @@ def add_house():
     landlord_account = session["username"]
 
     full_address = (
-        (data.get('city') or '') +
-        (data.get('district') or '') +
-        (data.get('road') or '') +
-        (data.get('lane') or '') +
-        (data.get('alley') or '') +
-        (data.get('number') or '')
+        (data.get("city") or "")
+        + (data.get("district") or "")
+        + (data.get("road") or "")
+        + (data.get("lane") or "")
+        + (data.get("alley") or "")
+        + (data.get("number") or "")
     )
 
     # 1. 先新增 ADDRESS
     address_data = {
-        'country': "台灣",
-        'city': data.get('city'),
-        'distrit': data.get('district'),
-        'road': data.get('road'),
-        'lane': data.get('lane'),
-        'alley': data.get('alley'),
-        'number': data.get('number'),
-        'zip_code': data.get('zip_code'),
-        'full_address': full_address
+        "country": "台灣",
+        "city": data.get("city"),
+        "distrit": data.get("district"),
+        "road": data.get("road"),
+        "lane": data.get("lane"),
+        "alley": data.get("alley"),
+        "number": data.get("number"),
+        "zip_code": data.get("zip_code"),
+        "full_address": full_address,
     }
     res_address = supabase.table("address").insert(address_data).execute()
     if not res_address.data:
@@ -365,12 +376,12 @@ def add_house():
 # 查詢房東的房屋列表
 @app.route("/api/houses", methods=["GET"])
 def get_houses():
-    #print("session:", dict(session))  # 新增
+    # print("session:", dict(session))  # 新增
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
     landlord_account = session["username"]
-    #print("landlord_account:", landlord_account)  # 新增
+    # print("landlord_account:", landlord_account)  # 新增
 
     # 1. 先用 landlord_account (user_account) 去 users table 查 user_id
     user_res = (
@@ -379,7 +390,7 @@ def get_houses():
         .eq("user_account", landlord_account)
         .execute()
     )
-    #print("user_res:", user_res.data)  # 新增
+    # print("user_res:", user_res.data)  # 新增
     if not user_res.data:
         return jsonify({"error": "找不到使用者"}), 404
     user_id = user_res.data[0]["user_id"]
@@ -391,13 +402,24 @@ def get_houses():
         .eq("owner_id", user_id)
         .execute()
     )
-    #print("house_res:", res.data)  # 新增
+    # print("house_res:", res.data)  # 新增
     for house in res.data:
-        media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
-        house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        media = (
+            supabase.table("house_media")
+            .select("*")
+            .eq("house_id", house["house_id"])
+            .order("order_index")
+            .limit(1)
+            .execute()
+            .data
+        )
+        house["main_image_url"] = (
+            media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        )
     return jsonify(res.data)
 
-#房東點選編輯房屋
+
+# 房東點選編輯房屋
 @app.route("/api/houses/<house_id>", methods=["GET"])
 def get_house(house_id):
     if "user_id" not in session or session.get("role") != "Landlord":
@@ -413,7 +435,8 @@ def get_house(house_id):
         return jsonify({"error": "找不到房屋"}), 404
     return jsonify(res.data[0])
 
-#房東確認更新房屋資訊
+
+# 房東確認更新房屋資訊
 @app.route("/api/houses/<house_id>", methods=["PUT"])
 def update_house(house_id):
     if "user_id" not in session or session.get("role") != "Landlord":
@@ -427,31 +450,38 @@ def update_house(house_id):
         files = []
 
     full_address = (
-        (data.get('city') or '') +
-        (data.get('district') or '') +
-        (data.get('road') or '') +
-        (data.get('lane') or '') +
-        (data.get('alley') or '') +
-        (data.get('number') or '')
+        (data.get("city") or "")
+        + (data.get("district") or "")
+        + (data.get("road") or "")
+        + (data.get("lane") or "")
+        + (data.get("alley") or "")
+        + (data.get("number") or "")
     )
 
     # 先更新 address
     address_data = {
-        'city': data.get('city'),
-        'distrit': data.get('district'),
-        'road': data.get('road'),
-        'lane': data.get('lane'),
-        'alley': data.get('alley'),
-        'number': data.get('number'),
-        'zip_code': data.get('zip_code'),
-        'full_address': full_address
+        "city": data.get("city"),
+        "distrit": data.get("district"),
+        "road": data.get("road"),
+        "lane": data.get("lane"),
+        "alley": data.get("alley"),
+        "number": data.get("number"),
+        "zip_code": data.get("zip_code"),
+        "full_address": full_address,
     }
     # 查出 house_address_id
-    house_res = supabase.table("house").select("house_address_id").eq("house_id", house_id).execute()
+    house_res = (
+        supabase.table("house")
+        .select("house_address_id")
+        .eq("house_id", house_id)
+        .execute()
+    )
     if not house_res.data:
         return jsonify({"error": "找不到房屋"}), 404
     address_id = house_res.data[0]["house_address_id"]
-    supabase.table("address").update(address_data).eq("address_id", address_id).execute()
+    supabase.table("address").update(address_data).eq(
+        "address_id", address_id
+    ).execute()
 
     # 再更新 house
     house_data = {
@@ -459,7 +489,7 @@ def update_house(house_id):
         "house_desc": data.get("house_desc"),
         "price_per_month": data.get("price_per_month"),
         "house_type": data.get("house_type"),
-        "house_status": data.get("house_status")
+        "house_status": data.get("house_status"),
     }
     supabase.table("house").update(house_data).eq("house_id", house_id).execute()
 
@@ -483,7 +513,9 @@ def update_house(house_id):
                 "media_url": url,
                 "thumbnail_url": url,
                 "order_index": idx,
-                "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "created_time": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat(),
             }
             res_media = supabase.table("house_media").insert(media_data).execute()
             if not res_media.data:
@@ -491,7 +523,8 @@ def update_house(house_id):
 
     return jsonify({"message": "房屋更新成功"})
 
-#首頁顯示房屋
+
+# 首頁顯示房屋
 @app.route("/api/home_houses", methods=["GET"])
 def get_home_houses():
     page = int(request.args.get("page", 1))
@@ -504,10 +537,14 @@ def get_home_houses():
     if city:
         address_query = address_query.eq("city", city)
     if district:
-        address_query = address_query.eq("distrit", district)  # 注意你的欄位名是 distrit
+        address_query = address_query.eq(
+            "distrit", district
+        )  # 注意你的欄位名是 distrit
     address_ids = [a["address_id"] for a in address_query.execute().data]
 
-    query = supabase.table("house").select("house_id, house_title, price_per_month, house_type, house_address_id, address:house_address_id(full_address)")
+    query = supabase.table("house").select(
+        "house_id, house_title, price_per_month, house_type, house_address_id, address:house_address_id(full_address)"
+    )
     if city or district:
         if address_ids:
             query = query.in_("house_address_id", address_ids)
@@ -515,13 +552,28 @@ def get_home_houses():
             return jsonify({"houses": [], "total": 0})
 
     total = len(query.execute().data)
-    res = query.order("created_time", desc=True).range((page-1)*page_size, page*page_size-1).execute()
+    res = (
+        query.order("created_time", desc=True)
+        .range((page - 1) * page_size, page * page_size - 1)
+        .execute()
+    )
 
     for house in res.data:
-        media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
-        house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        media = (
+            supabase.table("house_media")
+            .select("*")
+            .eq("house_id", house["house_id"])
+            .order("order_index")
+            .limit(1)
+            .execute()
+            .data
+        )
+        house["main_image_url"] = (
+            media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        )
 
     return jsonify({"houses": res.data, "total": total})
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
