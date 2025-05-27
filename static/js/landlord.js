@@ -3,6 +3,26 @@ const districtMap = {
     "新竹縣": ["竹北市", "湖口鄉", "新豐鄉", "新埔鎮", "關西鎮", "芎林鄉", "寶山鄉", "竹東鎮", "五峰鄉", "橫山鄉", "尖石鄉", "北埔鄉", "峨眉鄉"]
 };
 
+async function uploadImages(files) {
+    const uploaded = [];
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const filename = `house_${Date.now()}_${i}_${file.name}`;
+        // 用 fetch 上傳到 Supabase Storage API
+        const { data, error } = await supabase.storage.from('dbfinal-housemedia').upload(filename, file);
+        if (!error) {
+            const url = supabase.storage.from('dbfinal-housemedia').getPublicUrl(filename).data.publicUrl;
+            uploaded.push({
+                media_type: 'Image',
+                media_url: url,
+                thumbnail_url: url, // 可用同一張，或之後做縮圖
+                order_index: i
+            });
+        }
+    }
+    return uploaded;
+}
+
 export function setupLandlordFunctions() {
     const addHouseBtn = document.getElementById('addHouseBtn');
     const modal = document.getElementById('addHouseModal');
@@ -47,48 +67,17 @@ export function setupLandlordFunctions() {
     // 表單送出
     form.onsubmit = async (e) => {
         e.preventDefault();
-
-        const formData = {
-            city: document.getElementById('city').value,
-            district: document.getElementById('district').value,
-            road: document.getElementById('road').value,
-            lane: document.getElementById('lane').value,
-            alley: document.getElementById('alley').value,
-            number: document.getElementById('number').value,
-            zip_code: document.getElementById('zip_code').value,
-            full_address: String(
-                document.getElementById('city').value + 
-                document.getElementById('district').value + 
-                document.getElementById('road').value + 
-                document.getElementById('lane').value + 
-                document.getElementById('alley').value + 
-                document.getElementById('number').value
-            ),
-            house_title: document.getElementById('houseName').value,
-            house_desc: document.getElementById('houseDescription').value,
-            //house_price: document.getElementById('house_price').value,
-            //house_area: document.getElementById('house_area').value,
-            //house_floor: document.getElementById('house_floor').value,
-            house_type: document.getElementById('house_type').value,
-            house_status: document.getElementById('house_status').value,
-            price_per_month: document.getElementById('price_per_month').value
-            //max_months: document.getElementById('max_months').value
-            //media_list: JSON.parse(document.getElementById('media_list').value || '[]')
-        };
-
+        
+        const formData = new FormData(form);
         const response = await fetch('/api/houses', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
+            body: formData
         });
-
-        //country: document.getElementById('country').value
-
         if (response.ok) {
             alert('房屋新增成功！');
             modal.style.display = 'none';
             form.reset();
-            loadHousesList(); // 重新載入列表
+            loadHousesList();
         } else {
             const error = await response.json();
             alert(error.error || '新增失敗');
@@ -118,6 +107,12 @@ export async function loadHousesList() {
             housesList.innerHTML = houses.map(house => `
                 <div class="house-item">
                     <h4>${house.house_title}</h4>
+                    <div class="house-media-list">
+                        ${house.media_list && house.media_list.length
+                            ? house.media_list.map(media => `<img src="${media.media_url}" alt="房屋圖片" class="house-thumb">`).join('')
+                            : `<img src="${house.main_image_url}" alt="房屋主圖" class="house-thumb">`
+                        }
+                    </div>
                     <p>地址：${house.address ? house.address.full_address : ''}</p>
                     <p>租金：$${house.price_per_month}/月</p>
                     <p>類型：${houseTypeMap[house.house_type]}</p>
@@ -125,7 +120,7 @@ export async function loadHousesList() {
                     <button class="delete-house-btn">刪除</button>
                 </div>
             `).join('');
-
+            
             // Add event listeners for edit and delete buttons
             housesList.querySelectorAll('.edit-house-btn').forEach((btn, idx) => {
                 btn.addEventListener('click', () => editHouse(houses[idx].house_id));
@@ -156,7 +151,7 @@ export async function editHouse(houseId) {
 
     // 等行政區選單刷新後再設值
     setTimeout(() => {
-        document.getElementById('district').value = house.address.district;
+        document.getElementById('district').value = house.address.distrit;
     }, 0);
     //document.getElementById('district').value = house.address.distrit;
     document.getElementById('road').value = house.address.road || '';
@@ -190,41 +185,23 @@ export async function editHouse(houseId) {
     const form = document.getElementById('addHouseForm');
     form.onsubmit = async (e) => {
         e.preventDefault();
-        const updatedData = {
-            city: document.getElementById('city').value,
-            district: document.getElementById('district').value,
-            road: document.getElementById('road').value,
-            lane: document.getElementById('lane').value,
-            alley: document.getElementById('alley').value,
-            number: document.getElementById('number').value,
-            zip_code: document.getElementById('zip_code').value,
-            full_address: String(
-                document.getElementById('city').value + 
-                document.getElementById('district').value + 
-                document.getElementById('road').value + 
-                document.getElementById('lane').value + 
-                document.getElementById('alley').value +
-                document.getElementById('number').value
-            ),
-            house_title: document.getElementById('houseName').value,
-            house_desc: document.getElementById('houseDescription').value,
-            price_per_month: document.getElementById('price_per_month').value,
-            house_type: document.getElementById('house_type').value,   
-            house_status: document.getElementById('house_status').value
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const response = await fetch(`/api/houses/${houseId}`, {
+                method: 'PUT', // 或 'PUT'，依你的後端設計
+                body: formData
+            });
+            if (response.ok) {
+                alert('房屋更新成功！');
+                modal.style.display = 'none';
+                form.reset();
+                loadHousesList();
+            } else {
+                const error = await response.json();
+                alert(error.error || '更新失敗');
+            }
         };
-        const updateResponse = await fetch(`/api/houses/${houseId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData)
-        });
-        if (updateResponse.ok) {
-            alert('房屋更新成功！');
-            modal.style.display = 'none';
-            form.reset();
-            loadHousesList(); // 重新載入列表
-        } else {
-            const error = await updateResponse.json();
-            alert(error.error || '更新失敗');
-        }
     }
 }

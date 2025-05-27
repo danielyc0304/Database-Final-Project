@@ -86,33 +86,33 @@ const contentMap = {
             <div class="modal-content">
                 <span class="close">&times;</span>
                 <h3>新增房屋</h3>
-                <form id="addHouseForm">
-                    <label>房屋名稱：</label>
-                    <input type="text" id="houseName" required><br><br>
-                    <label>城市：</label>
-                    <select id="city" required>
+                <form id="addHouseForm" enctype="multipart/form-data">
+                    <label>房屋名稱*：</label>
+                    <input type="text" id="houseName" name="house_title" required><br><br>
+                    <label>城市*：</label>
+                    <select id="city" name="city" required>
                         <option value="">請選擇城市</option>
                         <option value="新竹市">新竹市</option>
                         <option value="新竹縣">新竹縣</option>
                     </select><br><br>
-                    <label>行政區：</label>
-                    <select id="district" required>
+                    <label>行政區*：</label>
+                    <select id="district" name="district" required>
                         <option value="">請先選擇城市</option>
                     </select><br><br>
-                    <label>道路：</label>
-                    <input type="text" id="road"><br><br>
+                    <label>道路*：</label>
+                    <input type="text" id="road" name="road"><br><br>
                     <label>巷：</label>
-                    <input type="text" id="lane"><br><br>
+                    <input type="text" id="lane" name="lane"><br><br>
                     <label>弄：</label>
-                    <input type="text" id="alley"><br><br>
+                    <input type="text" id="alley" name="alley"><br><br>
                     <label>號：</label>
-                    <input type="text" id="number"><br><br>
+                    <input type="text" id="number" name="number"><br><br>
                     <label>郵遞區號：</label>
-                    <input type="text" id="zip_code"><br><br>
+                    <input type="text" id="zip_code" name="zip_code"><br><br>
                     <label>租金/月：</label>
-                    <input type="number" id="price_per_month" required><br><br>
+                    <input type="number" id="price_per_month" name="price_per_month" required><br><br>
                     <label>房屋類型：</label>
-                    <select id="house_type" required>
+                    <select id="house_type" name="house_type" required>
                         <option value="APARTMENT">公寓</option>
                         <option value="SUITE">套房</option>
                         <option value="ROOM">雅房</option>
@@ -120,7 +120,7 @@ const contentMap = {
                         <option value="OTHER">其它</option>
                     </select><br><br>
                     <label>房屋狀態：</label>
-                    <select id="house_status" required>
+                    <select id="house_status" name="house_status" required>
                         <option value="DRAFT">草稿</option>
                         <option value="PUBLISHED">發布</option>
                         <option value="RENTED">已出租</option>
@@ -128,7 +128,9 @@ const contentMap = {
                         <option value="ARCHIVED">典藏</option>
                     </select><br><br>
                     <label>房屋描述：</label>
-                    <textarea id="houseDescription" rows="3"></textarea><br><br>
+                    <textarea id="houseDescription" name="house_desc" rows="3"></textarea><br><br>
+                    <label>上傳照片：</label>
+                    <input type="file" id="media_list" name="media_list" accept="image/*" multiple><br><br>
                     <button type="submit">送出</button>
                     <button type="button" id="cancelBtn">取消</button>
                 </form>
@@ -216,6 +218,7 @@ export async function loadHomeHouses(page = 1) {
         }
         grid.innerHTML = houses.map(house => `
             <a href="/house/${house.house_id}" class="listing-item" target="_blank">
+            <img src="${house.main_image_url}" alt="房屋圖片">
                 <div class="listing-info">
                     <h4>${house.house_title}</h4>
                     <p>地點：${house.address ? house.address.full_address : ''}</p>

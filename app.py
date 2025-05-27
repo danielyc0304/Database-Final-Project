@@ -77,7 +77,9 @@ def house(house_id):
         .data[0]
     )
 
-    return render_template("house.html", house=house, landlord=landlord)
+    # 查詢所有圖片
+    media_list = supabase.table("house_media").select("*").eq("house_id", house_id).order("order_index").execute().data
+    return render_template("house.html", house=house, landlord=landlord, media_list=media_list)
 
 
 @app.route("/")
@@ -217,7 +219,7 @@ def api_signup():
         avatar = files["avatar"]
         # 產生唯一檔名
         filename = f"{user_account}_{int(datetime.datetime.now().timestamp())}.{avatar.filename.rsplit('.', 1)[-1]}"
-        # 上傳到 Supabase Storage
+        # 上傳到 Supabase 
         file_bytes = avatar.read()  # 讀成 bytes
         res_upload = supabase.storage.from_("dbfinal-avatars").upload(
             filename, file_bytes, {"content-type": avatar.mimetype}
@@ -265,8 +267,24 @@ def add_house():
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
-    data = request.json
+    # 支援 multipart/form-data
+    if request.content_type.startswith("multipart/form-data"):
+        data = request.form
+        files = request.files.getlist("media_list")
+    else:
+        data = request.json
+        files = []
+    
     landlord_account = session["username"]
+
+    full_address = (
+        (data.get('city') or '') +
+        (data.get('district') or '') +
+        (data.get('road') or '') +
+        (data.get('lane') or '') +
+        (data.get('alley') or '') +
+        (data.get('number') or '')
+    )
 
     # 1. 先新增 ADDRESS
     address_data = {
@@ -278,7 +296,7 @@ def add_house():
         'alley': data.get('alley'),
         'number': data.get('number'),
         'zip_code': data.get('zip_code'),
-        'full_address': data.get('full_address')
+        'full_address': full_address
     }
     res_address = supabase.table("address").insert(address_data).execute()
     if not res_address.data:
@@ -319,15 +337,22 @@ def add_house():
         return jsonify({"error": "新增房屋失敗"}), 500
     house_id = res_house.data[0]["house_id"]
 
-    # 3. 處理 HOUSE_MEDIA (假設有多個媒體)
-    media_list = data.get("media_list", [])  # 取得媒體列表
-    for media in media_list:
+    # 3. 處理 HOUSE_MEDIA
+    for idx, file in enumerate(files):
+        filename = f"house_{house_id}_{int(datetime.datetime.now().timestamp())}_{idx}.{file.filename.rsplit('.', 1)[-1]}"
+        file_bytes = file.read()
+        res_upload = supabase.storage.from_("dbfinal-housemedia").upload(
+            filename, file_bytes, {"content-type": file.mimetype}
+        )
+        if not res_upload:
+            return jsonify({"error": "圖片上傳失敗"}), 500
+        url = supabase.storage.from_("dbfinal-housemedia").get_public_url(filename)
         media_data = {
             "house_id": house_id,
-            "media_type": media.get("media_type"),  # Image, Video
-            "media_url": media.get("media_url"),
-            "thumbnail_url": media.get("thumbnail_url"),
-            "order_index": media.get("order_index"),
+            "media_type": "Image",
+            "media_url": url,
+            "thumbnail_url": url,
+            "order_index": idx,
             "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
         res_media = supabase.table("house_media").insert(media_data).execute()
@@ -340,10 +365,12 @@ def add_house():
 # 查詢房東的房屋列表
 @app.route("/api/houses", methods=["GET"])
 def get_houses():
+    #print("session:", dict(session))  # 新增
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
     landlord_account = session["username"]
+    #print("landlord_account:", landlord_account)  # 新增
 
     # 1. 先用 landlord_account (user_account) 去 users table 查 user_id
     user_res = (
@@ -352,6 +379,7 @@ def get_houses():
         .eq("user_account", landlord_account)
         .execute()
     )
+    #print("user_res:", user_res.data)  # 新增
     if not user_res.data:
         return jsonify({"error": "找不到使用者"}), 404
     user_id = user_res.data[0]["user_id"]
@@ -363,6 +391,10 @@ def get_houses():
         .eq("owner_id", user_id)
         .execute()
     )
+    #print("house_res:", res.data)  # 新增
+    for house in res.data:
+        media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
+        house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
     return jsonify(res.data)
 
 #房東點選編輯房屋
@@ -387,7 +419,21 @@ def update_house(house_id):
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
-    data = request.json
+    if request.content_type.startswith("multipart/form-data"):
+        data = request.form
+        files = request.files.getlist("media_list")
+    else:
+        data = request.json
+        files = []
+    
+    full_address = (
+        (data.get('city') or '') +
+        (data.get('district') or '') +
+        (data.get('road') or '') +
+        (data.get('lane') or '') +
+        (data.get('alley') or '') +
+        (data.get('number') or '')
+    )
 
     # 先更新 address
     address_data = {
@@ -398,7 +444,7 @@ def update_house(house_id):
         'alley': data.get('alley'),
         'number': data.get('number'),
         'zip_code': data.get('zip_code'),
-        'full_address': data.get('full_address')
+        'full_address': full_address
     }
     # 查出 house_address_id
     house_res = supabase.table("house").select("house_address_id").eq("house_id", house_id).execute()
@@ -416,6 +462,32 @@ def update_house(house_id):
         "house_status": data.get("house_status")
     }
     supabase.table("house").update(house_data).eq("house_id", house_id).execute()
+
+    # 覆蓋舊圖片：先刪除舊的，再新增這次上傳的
+    if files:
+        # 刪除舊的 house_media
+        supabase.table("house_media").delete().eq("house_id", house_id).execute()
+
+        for idx, file in enumerate(files):
+            filename = f"house_{house_id}_{int(datetime.datetime.now().timestamp())}_{idx}.{file.filename.rsplit('.', 1)[-1]}"
+            file_bytes = file.read()
+            res_upload = supabase.storage.from_("dbfinal-housemedia").upload(
+                filename, file_bytes, {"content-type": file.mimetype}
+            )
+            if not res_upload:
+                return jsonify({"error": "圖片上傳失敗"}), 500
+            url = supabase.storage.from_("dbfinal-housemedia").get_public_url(filename)
+            media_data = {
+                "house_id": house_id,
+                "media_type": "Image",
+                "media_url": url,
+                "thumbnail_url": url,
+                "order_index": idx,
+                "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            }
+            res_media = supabase.table("house_media").insert(media_data).execute()
+            if not res_media.data:
+                return jsonify({"error": "媒體新增失敗"}), 500
 
     return jsonify({"message": "房屋更新成功"})
 
@@ -441,8 +513,14 @@ def get_home_houses():
             query = query.in_("house_address_id", address_ids)
         else:
             return jsonify({"houses": [], "total": 0})
+    
     total = len(query.execute().data)
     res = query.order("created_time", desc=True).range((page-1)*page_size, page*page_size-1).execute()
+    
+    for house in res.data:
+        media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
+        house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+    
     return jsonify({"houses": res.data, "total": total})
 
 if __name__ == "__main__":
