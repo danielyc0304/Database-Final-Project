@@ -52,7 +52,7 @@
 
           <div class="properties-list">
             {% for house in houses %}
-            <div class="property">
+            <a class="property" href="/house/{{ house['house_id'] }}">
               <img
                 src="{{ house['media_url'] }}"
                 alt="{{ house['house_title'] }}"
@@ -63,7 +63,7 @@
                 <p class="address">{{ house["full_address"] }}</p>
                 <p class="price">{{ house["price_per_month"] }} 元/月</p>
               </div>
-            </div>
+            </a>
             {% endfor %}
           </div>
 

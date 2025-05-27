@@ -97,6 +97,8 @@ body {
 
 .property {
   flex: 1;
+  text-decoration: none; /* 移除底線 */
+  color: inherit; /* 繼承父元素的文字顏色 */
 }
 
 .property img {
