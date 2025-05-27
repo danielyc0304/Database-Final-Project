@@ -77,9 +77,12 @@ def house(house_id):
         .data[0]
     )
 
+<<<<<<< HEAD
     # 查詢所有圖片
     media_list = supabase.table("house_media").select("*").eq("house_id", house_id).order("order_index").execute().data
     return render_template("house.html", house=house, landlord=landlord, media_list=media_list)
+=======
+>>>>>>> danielyc0304/main
 
 
 @app.route("/")
@@ -97,6 +100,9 @@ def logout():
 @app.route("/api/login", methods=["POST"])
 def api_login():
     data = request.json  # 接收 JSON 格式的請求
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
+
     username = data.get("username")
     password = data.get("password")
 
@@ -118,7 +124,7 @@ def api_login():
         supabase.table("user_login").update(
             {"account_status": "ACTIVE", "last_login_time": now}
         ).eq("user_account", username).execute()
-        
+
         # 先查 user_login 拿 user_id
         login_res = (
             supabase.table("user_login")
@@ -147,6 +153,8 @@ def api_login():
             )
         else:
             return jsonify({"error": "No role found."}), 401
+    else:
+        return jsonify({"error": "Invalid credentials. Try again."}), 401
 
 
 @app.route("/signup", methods=["GET"])
@@ -157,6 +165,9 @@ def signup_page():
 @app.route("/api/check_username", methods=["POST"])
 def check_username():
     data = request.json
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
+
     username = data.get("username")
     # 查詢 user_login 是否有這個 user_account
     exist = (
@@ -180,6 +191,8 @@ def api_signup():
     else:
         data = request.json
         files = None
+    if not data:
+        return jsonify({"error": "No data provided."}), 400
 
     user_account = data.get("account")
     user_password = data.get("password")
@@ -193,6 +206,8 @@ def api_signup():
     required_fields = [last_name, first_name, nickname, email, role]
     if not all(required_fields):
         return jsonify({"error": "請完整填寫所有必填欄位"}), 400
+    if user_password is None:
+        return jsonify({"error": "密碼為必填欄位"}), 400
 
     # 產生鹽值並加密密碼
     salt = bcrypt.gensalt()
@@ -218,8 +233,15 @@ def api_signup():
     if files and "avatar" in files:
         avatar = files["avatar"]
         # 產生唯一檔名
-        filename = f"{user_account}_{int(datetime.datetime.now().timestamp())}.{avatar.filename.rsplit('.', 1)[-1]}"
-        # 上傳到 Supabase 
+<<<<<<< HEAD
+=======
+        if avatar.filename and "." in avatar.filename:
+            ext = avatar.filename.rsplit(".", 1)[-1]
+        else:
+            ext = "jpg"  # default extension if filename is missing or has no extension
+        filename = f"{user_account}_{int(datetime.datetime.now().timestamp())}.{ext}"
+        # 上傳到 Supabase Storage
+>>>>>>> danielyc0304/main
         file_bytes = avatar.read()  # 讀成 bytes
         res_upload = supabase.storage.from_("dbfinal-avatars").upload(
             filename, file_bytes, {"content-type": avatar.mimetype}
@@ -267,6 +289,7 @@ def add_house():
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
+<<<<<<< HEAD
     # 支援 multipart/form-data
     if request.content_type.startswith("multipart/form-data"):
         data = request.form
@@ -274,7 +297,7 @@ def add_house():
     else:
         data = request.json
         files = []
-    
+
     landlord_account = session["username"]
 
     full_address = (
@@ -285,6 +308,8 @@ def add_house():
         (data.get('alley') or '') +
         (data.get('number') or '')
     )
+=======
+>>>>>>> danielyc0304/main
 
     # 1. 先新增 ADDRESS
     address_data = {
@@ -425,7 +450,7 @@ def update_house(house_id):
     else:
         data = request.json
         files = []
-    
+
     full_address = (
         (data.get('city') or '') +
         (data.get('district') or '') +
@@ -513,14 +538,14 @@ def get_home_houses():
             query = query.in_("house_address_id", address_ids)
         else:
             return jsonify({"houses": [], "total": 0})
-    
+
     total = len(query.execute().data)
     res = query.order("created_time", desc=True).range((page-1)*page_size, page*page_size-1).execute()
-    
+
     for house in res.data:
         media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
         house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
-    
+
     return jsonify({"houses": res.data, "total": total})
 
 if __name__ == "__main__":
