@@ -1,4 +1,3 @@
-from time import sleep
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 
 from dotenv import load_dotenv
@@ -61,9 +60,11 @@ def about(user_id):
             .eq("house_id", house["house_id"])
             .order("order_index")
             .execute()
-            .data[0]["media_url"]
+            .data
         )
-    print(house)
+
+        if house["media_url"]:
+            house["media_url"] = house["media_url"][0]["media_url"]
 
     return render_template("about.html", user=user, login=login, houses=houses)
 
@@ -174,6 +175,8 @@ def api_login():
             )
         else:
             return jsonify({"error": "No role found."}), 401
+    else:
+        return jsonify({"error": "Invalid credentials. Try again."}), 401
 
 
 @app.route("/signup", methods=["GET"])
@@ -611,7 +614,7 @@ def add_note_route():
             "note_content": content,
             "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
-        # 假設你的備註表格叫做 'notes'
+
         res_note = supabase.table("view_note").insert(note_data).execute()
 
         if not res_note.data:
@@ -621,11 +624,9 @@ def add_note_route():
         return (
             jsonify(
                 {
-                    "id": new_note.get("note_id"),  # 確保你的 notes 表有 id 主鍵並會返回
+                    "id": new_note.get("note_id"),
                     "content": new_note.get("note_content"),
-                    "created_at": new_note.get(
-                        "created_time"
-                    ),  # 或者從 note_data 取 datetime.datetime.now...
+                    "created_at": new_note.get("created_time"),
                     "user_id": new_note.get("user_id"),
                 }
             ),
@@ -635,6 +636,131 @@ def add_note_route():
         # Log the exception for debugging
         app.logger.error(f"Error adding note: {e}")
         return jsonify({"message": f"新增備註時發生伺服器錯誤: {e}"}), 500
+
+
+@app.route("/profile/edit", methods=["GET"])
+def edit_profile():
+    if "user_id" not in session:
+        return redirect(
+            url_for("login_page")
+        )  # 假設你有一個登入頁面的路由叫做 login_page
+
+    user_id = session["user_id"]
+    user_data = (
+        supabase.table("users").select("*").eq("user_id", user_id).execute().data
+    )
+
+    if not user_data:
+        return "User not found", 404
+
+    return render_template("edit_profile.html", user=user_data[0])
+
+
+@app.route("/api/profile/update", methods=["POST"])
+def api_update_profile():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    data = request.form
+    files = request.files
+
+    update_data = {
+        "user_fname": data.get("user_fname"),
+        "user_lname": data.get("user_lname"),
+        "user_name": data.get("user_name"),  # 假設 nickname 對應 user_name
+        "user_email": data.get("user_email"),
+        "user_desc": data.get("user_desc"),  # 新增 user_desc
+    }
+
+    # 過濾掉值為 None 的欄位，避免清空資料庫中已有值的欄位
+    # 調整：如果欄位是 user_desc 且其值為空字串，我們可能希望將其更新為空，而不是保留舊值
+    filtered_update_data = {}
+    for k, v in update_data.items():
+        if v is not None:  # 保留所有非 None 的值
+            if k == "user_desc" and v == "":  # 如果是 user_desc 且為空字串，也加入
+                filtered_update_data[k] = v
+            elif (
+                v != ""
+            ):  # 其他欄位，如果不是空字串才加入 (避免空字串覆蓋原有值，除非是 user_desc)
+                filtered_update_data[k] = v
+        # 如果 v is None，則不加入 filtered_update_data，即保留資料庫原始值
+
+    update_data = filtered_update_data
+
+    new_avatar_url = None
+    if "avatar" in files and files["avatar"].filename != "":
+        avatar = files["avatar"]
+        # 確保使用者帳號存在於 session 中，用於產生檔名
+        user_account = session.get("username", "default_user")
+        filename = f"avatar_{user_id}_{user_account}_{int(datetime.datetime.now().timestamp())}.{avatar.filename.rsplit('.', 1)[-1]}"
+
+        try:
+            file_bytes = avatar.read()
+            # 上傳到 Supabase Storage 的 'dbfinal-avatars' bucket
+            upload_response = supabase.storage.from_("dbfinal-avatars").upload(
+                path=filename,
+                file=file_bytes,
+                file_options={"content-type": avatar.mimetype},
+            )
+
+            # 檢查上傳是否成功 (Supabase Python client v2 可能不直接返回 HTTP 狀態碼，而是拋出異常或返回特定結構)
+            # 這裡假設成功時 upload_response 是一個包含 key 的對象或字典，失敗則可能拋異常或返回 None/Error
+            # 根據 Supabase client 的實際行為調整
+            # if upload_response and hasattr(upload_response, 'key'): # 假設成功時有 key 屬性
+            new_avatar_url = supabase.storage.from_("dbfinal-avatars").get_public_url(
+                filename
+            )
+            update_data["user_avatar_url"] = new_avatar_url
+            # else:
+            #     # 處理上傳失敗的情況，可以記錄錯誤或返回錯誤訊息
+            #     app.logger.error(f"Avatar upload failed: {upload_response})")
+            #     return jsonify({"error": "頭像上傳失敗"}), 500
+
+        except Exception as e:
+            app.logger.error(f"Error uploading avatar: {e}")
+            return jsonify({"error": f"頭像上傳時發生錯誤: {str(e)}"}), 500
+
+    if update_data:
+        try:
+            res = (
+                supabase.table("users")
+                .update(update_data)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            if (
+                not res.data and not new_avatar_url
+            ):  # 如果沒有資料更新且沒有新頭像 (可能沒有任何變更)
+                return jsonify({"message": "沒有變更"}), 200
+            if (
+                not res.data
+                and new_avatar_url
+                and update_data.keys() == {"user_avatar_url"}
+            ):
+                # 只有頭像更新成功
+                return (
+                    jsonify(
+                        {
+                            "message": "個人檔案更新成功！",
+                            "new_avatar_url": new_avatar_url,
+                        }
+                    ),
+                    200,
+                )
+            if not res.data:
+                # 有其他欄位嘗試更新但失敗
+                return jsonify({"error": "更新個人檔案時資料庫錯誤"}), 500
+
+        except Exception as e:
+            app.logger.error(f"Error updating profile in DB: {e}")
+            return jsonify({"error": f"更新個人檔案時發生資料庫錯誤: {str(e)}"}), 500
+
+    response_data = {"message": "個人檔案更新成功！"}
+    if new_avatar_url:
+        response_data["new_avatar_url"] = new_avatar_url
+
+    return jsonify(response_data), 200
 
 
 if __name__ == "__main__":

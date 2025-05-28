@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>編輯個人檔案</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <!-- You might want to create a specific CSS file for this page or reuse/extend existing ones -->
+    <style>
+      body {
+        font-family: "Noto Sans TC", sans-serif;
+        background-color: #f9fafb;
+        color: #111827;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      .container {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 600px;
+      }
+      h1 {
+        text-align: center;
+        color: #374151;
+        margin-bottom: 1.5rem;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+      }
+      .form-group input[type="text"],
+      .form-group input[type="email"],
+      .form-group input[type="file"],
+      .form-group textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        box-sizing: border-box;
+      }
+      .form-group input:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      }
+      .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-top: 0.5rem;
+        border: 2px solid #e5e7eb;
+      }
+      .btn-submit {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .btn-submit:hover {
+        background-color: #2563eb;
+      }
+      .message {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+        text-align: center;
+      }
+      .message.success {
+        background-color: #d1fae5;
+        color: #065f46;
+      }
+      .message.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>編輯個人檔案</h1>
+
+      <div id="message-area"></div>
+
+      <form id="edit-profile-form" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="user_fname">名字</label>
+          <input
+            type="text"
+            id="user_fname"
+            name="user_fname"
+            value="{{ user.user_fname or '' }}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="user_lname">姓氏</label>
+          <input
+            type="text"
+            id="user_lname"
+            name="user_lname"
+            value="{{ user.user_lname or '' }}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="user_name">暱稱</label>
+          <input
+            type="text"
+            id="user_name"
+            name="user_name"
+            value="{{ user.user_name or '' }}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="user_email">電子郵件</label>
+          <input
+            type="email"
+            id="user_email"
+            name="user_email"
+            value="{{ user.user_email or '' }}"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="user_desc">個人介紹</label>
+          <textarea id="user_desc" name="user_desc" rows="4">
+{{ user.user_desc or '' }}</textarea
+          >
+        </div>
+        <div class="form-group">
+          <label for="user_avatar">個人頭像</label>
+          <input
+            type="file"
+            id="user_avatar"
+            name="user_avatar"
+            accept="image/*"
+          />
+          {% if user.user_avatar_url %}
+          <img
+            src="{{ user.user_avatar_url }}"
+            alt="Current Avatar"
+            class="avatar-preview"
+            id="avatar-preview-img"
+          />
+          {% else %}
+          <img
+            src="https://via.placeholder.com/100"
+            alt="Default Avatar"
+            class="avatar-preview"
+            id="avatar-preview-img"
+          />
+          {% endif %}
+        </div>
+        <button type="submit" class="btn-submit">儲存變更</button>
+      </form>
+    </div>
+
+    <!-- <script>
+        // Basic avatar preview
+        const avatarInput = document.getElementById('user_avatar');
+        const avatarPreviewImg = document.getElementById('avatar-preview-img');
+        if (avatarInput && avatarPreviewImg) {
+            avatarInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        avatarPreviewImg.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    </script> -->
+    <!-- Link to your edit_profile.js if you create one -->
+    <script src="{{ url_for('static', filename='js/edit_profile.js') }}"></script>
+  </body>
+</html>
