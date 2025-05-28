@@ -80,19 +80,36 @@ body {
   cursor: pointer;
 }
 
-
 .media-list {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 20px;
 }
 
 .media-list img {
   width: 400px;
   height: 300px;
-  object-fit: cover;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   background: #f7f7f7;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+.contact {
+  margin-bottom: 2rem;
+}
+
+.note h3 {
+  color: #696d74;
+}
+
+.existing-note {
+  margin-bottom: 0.5rem;
+}
+.existing-note p {
+  margin: auto;
+}
+.existing-note span {
+  color: #696d74;
 }

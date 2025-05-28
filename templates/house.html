@@ -21,7 +21,7 @@
       <!--<div class="media"><img src="/" alt="{{ house['house_title'] }}" /></div>-->
       <div class="media-list">
         {% for media in media_list %}
-          <img src="{{ media.media_url }}" alt="房屋圖片">
+        <img src="{{ media.media_url }}" alt="房屋圖片" />
         {% endfor %}
       </div>
 
@@ -30,9 +30,7 @@
 
         <div class="about">
           <h3>關於</h3>
-          <p>
-            {{ house["house_desc"] }} 
-          </p>
+          <p>{{ house["house_desc"] }}</p>
         </div>
 
         <div class="contact">
@@ -41,7 +39,7 @@
 
             <div class="landlord">
               <div class="landlord-info">
-                <img src="/" alt="Avatar" />
+                <img src="{{ landlord['user_avatar_url'] }}" alt="Avatar" />
 
                 <div class="more-info">
                   <h4>
@@ -57,7 +55,36 @@
             </div>
           </div>
         </div>
+
+        <div class="note">
+          <h3>你的備註</h3>
+          <div id="notes-display-area">
+            <!-- Existing notes will be loaded here by JavaScript or server-side rendering -->
+            {% if notes %} {% for note in notes %}
+            <div class="existing-note">
+              <p>
+                {{ note.note_content }}
+                <span>備註於: {{ note.created_time }}</span>
+              </p>
+            </div>
+            {% endfor %} {% else %}
+            <p>目前沒有備註。</p>
+            {% endif %}
+          </div>
+          <form id="add-note-form">
+            <input type="hidden" id="houseId" value="{{ house['house_id'] }}" />
+            <!-- Assuming house_id is available -->
+            <textarea
+              id="note-text"
+              placeholder="在這裡輸入你的備註..."
+              required
+            ></textarea>
+            <button type="submit">新增備註</button>
+          </form>
+        </div>
       </div>
     </div>
+    <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
+    <!-- Add this line -->
   </body>
 </html>

@@ -14,9 +14,12 @@
   <body>
     <div class="container">
       <aside class="sidebar">
-        <img src="/" alt="Avatar" />
+        <img src="{{ user['user_avatar_url'] }}" alt="Avatar" />
 
         <h2>{{ user["user_fname"] + " " + user["user_lname"] }}</h2>
+        <a href="{{ url_for('edit_profile') }}" class="edit-profile-button"
+          >編輯個人資料</a
+        >
         <p>
           {% if user["user_role"] == "Tenant" %} 租客 {% elif user["user_role"]
           == "Landlord" %} 房東 {% endif %}
@@ -31,10 +34,8 @@
           <h3>關於我</h3>
 
           <p>
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Quo veniam
-            praesentium recusandae, autem aperiam impedit est? Quis sequi
-            excepturi enim laborum aperiam soluta consectetur dolore iusto quam,
-            inventore officiis quaerat!
+            {{ user["user_desc"] | default('這位使用者很懶，沒有留下任何介紹。',
+            true) }}
           </p>
 
           <div class="info">
@@ -52,15 +53,18 @@
 
           <div class="properties-list">
             {% for house in houses %}
-            <div class="property">
-              <img src="/" alt="{{ house['house_title'] }}" />
+            <a class="property" href="/house/{{ house['house_id'] }}">
+              <img
+                src="{{ house['media_url'] }}"
+                alt="{{ house['house_title'] }}"
+              />
 
               <div class="property-details">
                 <h4>{{ house["house_title"] }}</h4>
                 <p class="address">{{ house["full_address"] }}</p>
                 <p class="price">{{ house["price_per_month"] }} 元/月</p>
               </div>
-            </div>
+            </a>
             {% endfor %}
           </div>
 

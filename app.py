@@ -16,9 +16,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 app.permanent_session_lifetime = timedelta(days=7)
 
+
 @app.before_request
 def make_session_permanent():
     session.permanent = True
+
 
 url: str = os.environ.get("SUPABASE_URL") or ""
 key: str = os.environ.get("SUPABASE_KEY") or ""
@@ -52,6 +54,17 @@ def about(user_id):
             .data[0]["full_address"]
         )
         house["price_per_month"] = f"{house['price_per_month']:,}"
+        house["media_url"] = (
+            supabase.table("house_media")
+            .select("media_url")
+            .eq("house_id", house["house_id"])
+            .order("order_index")
+            .execute()
+            .data
+        )
+
+        if house["media_url"]:
+            house["media_url"] = house["media_url"][0]["media_url"]
 
     return render_template("about.html", user=user, login=login, houses=houses)
 
@@ -78,8 +91,23 @@ def house(house_id):
     )
 
     # 查詢所有圖片
-    media_list = supabase.table("house_media").select("*").eq("house_id", house_id).order("order_index").execute().data
-    return render_template("house.html", house=house, landlord=landlord, media_list=media_list)
+    media_list = (
+        supabase.table("house_media")
+        .select("*")
+        .eq("house_id", house_id)
+        .order("order_index")
+        .execute()
+        .data
+    )
+    notes = (
+        supabase.table("view_note").select("*").eq("house_id", house_id).execute().data
+    )
+
+    print(notes)
+
+    return render_template(
+        "house.html", house=house, landlord=landlord, media_list=media_list, notes=notes
+    )
 
 
 @app.route("/")
@@ -147,6 +175,8 @@ def api_login():
             )
         else:
             return jsonify({"error": "No role found."}), 401
+    else:
+        return jsonify({"error": "Invalid credentials. Try again."}), 401
 
 
 @app.route("/signup", methods=["GET"])
@@ -278,25 +308,25 @@ def add_house():
     landlord_account = session["username"]
 
     full_address = (
-        (data.get('city') or '') +
-        (data.get('district') or '') +
-        (data.get('road') or '') +
-        (data.get('lane') or '') +
-        (data.get('alley') or '') +
-        (data.get('number') or '')
+        (data.get("city") or "")
+        + (data.get("district") or "")
+        + (data.get("road") or "")
+        + (data.get("lane") or "")
+        + (data.get("alley") or "")
+        + (data.get("number") or "")
     )
 
     # 1. 先新增 ADDRESS
     address_data = {
-        'country': "台灣",
-        'city': data.get('city'),
-        'distrit': data.get('district'),
-        'road': data.get('road'),
-        'lane': data.get('lane'),
-        'alley': data.get('alley'),
-        'number': data.get('number'),
-        'zip_code': data.get('zip_code'),
-        'full_address': full_address
+        "country": "台灣",
+        "city": data.get("city"),
+        "distrit": data.get("district"),
+        "road": data.get("road"),
+        "lane": data.get("lane"),
+        "alley": data.get("alley"),
+        "number": data.get("number"),
+        "zip_code": data.get("zip_code"),
+        "full_address": full_address,
     }
     res_address = supabase.table("address").insert(address_data).execute()
     if not res_address.data:
@@ -365,12 +395,12 @@ def add_house():
 # 查詢房東的房屋列表
 @app.route("/api/houses", methods=["GET"])
 def get_houses():
-    #print("session:", dict(session))  # 新增
+    # print("session:", dict(session))  # 新增
     if "user_id" not in session or session.get("role") != "Landlord":
         return jsonify({"error": "未授權"}), 403
 
     landlord_account = session["username"]
-    #print("landlord_account:", landlord_account)  # 新增
+    # print("landlord_account:", landlord_account)  # 新增
 
     # 1. 先用 landlord_account (user_account) 去 users table 查 user_id
     user_res = (
@@ -379,7 +409,7 @@ def get_houses():
         .eq("user_account", landlord_account)
         .execute()
     )
-    #print("user_res:", user_res.data)  # 新增
+    # print("user_res:", user_res.data)  # 新增
     if not user_res.data:
         return jsonify({"error": "找不到使用者"}), 404
     user_id = user_res.data[0]["user_id"]
@@ -391,13 +421,24 @@ def get_houses():
         .eq("owner_id", user_id)
         .execute()
     )
-    #print("house_res:", res.data)  # 新增
+    # print("house_res:", res.data)  # 新增
     for house in res.data:
-        media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
-        house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        media = (
+            supabase.table("house_media")
+            .select("*")
+            .eq("house_id", house["house_id"])
+            .order("order_index")
+            .limit(1)
+            .execute()
+            .data
+        )
+        house["main_image_url"] = (
+            media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        )
     return jsonify(res.data)
 
-#房東點選編輯房屋
+
+# 房東點選編輯房屋
 @app.route("/api/houses/<house_id>", methods=["GET"])
 def get_house(house_id):
     if "user_id" not in session or session.get("role") != "Landlord":
@@ -413,7 +454,8 @@ def get_house(house_id):
         return jsonify({"error": "找不到房屋"}), 404
     return jsonify(res.data[0])
 
-#房東確認更新房屋資訊
+
+# 房東確認更新房屋資訊
 @app.route("/api/houses/<house_id>", methods=["PUT"])
 def update_house(house_id):
     if "user_id" not in session or session.get("role") != "Landlord":
@@ -427,31 +469,38 @@ def update_house(house_id):
         files = []
 
     full_address = (
-        (data.get('city') or '') +
-        (data.get('district') or '') +
-        (data.get('road') or '') +
-        (data.get('lane') or '') +
-        (data.get('alley') or '') +
-        (data.get('number') or '')
+        (data.get("city") or "")
+        + (data.get("district") or "")
+        + (data.get("road") or "")
+        + (data.get("lane") or "")
+        + (data.get("alley") or "")
+        + (data.get("number") or "")
     )
 
     # 先更新 address
     address_data = {
-        'city': data.get('city'),
-        'distrit': data.get('district'),
-        'road': data.get('road'),
-        'lane': data.get('lane'),
-        'alley': data.get('alley'),
-        'number': data.get('number'),
-        'zip_code': data.get('zip_code'),
-        'full_address': full_address
+        "city": data.get("city"),
+        "distrit": data.get("district"),
+        "road": data.get("road"),
+        "lane": data.get("lane"),
+        "alley": data.get("alley"),
+        "number": data.get("number"),
+        "zip_code": data.get("zip_code"),
+        "full_address": full_address,
     }
     # 查出 house_address_id
-    house_res = supabase.table("house").select("house_address_id").eq("house_id", house_id).execute()
+    house_res = (
+        supabase.table("house")
+        .select("house_address_id")
+        .eq("house_id", house_id)
+        .execute()
+    )
     if not house_res.data:
         return jsonify({"error": "找不到房屋"}), 404
     address_id = house_res.data[0]["house_address_id"]
-    supabase.table("address").update(address_data).eq("address_id", address_id).execute()
+    supabase.table("address").update(address_data).eq(
+        "address_id", address_id
+    ).execute()
 
     # 再更新 house
     house_data = {
@@ -459,7 +508,7 @@ def update_house(house_id):
         "house_desc": data.get("house_desc"),
         "price_per_month": data.get("price_per_month"),
         "house_type": data.get("house_type"),
-        "house_status": data.get("house_status")
+        "house_status": data.get("house_status"),
     }
     supabase.table("house").update(house_data).eq("house_id", house_id).execute()
 
@@ -483,7 +532,9 @@ def update_house(house_id):
                 "media_url": url,
                 "thumbnail_url": url,
                 "order_index": idx,
-                "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "created_time": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat(),
             }
             res_media = supabase.table("house_media").insert(media_data).execute()
             if not res_media.data:
@@ -491,7 +542,8 @@ def update_house(house_id):
 
     return jsonify({"message": "房屋更新成功"})
 
-#首頁顯示房屋
+
+# 首頁顯示房屋
 @app.route("/api/home_houses", methods=["GET"])
 def get_home_houses():
     page = int(request.args.get("page", 1))
@@ -504,10 +556,14 @@ def get_home_houses():
     if city:
         address_query = address_query.eq("city", city)
     if district:
-        address_query = address_query.eq("distrit", district)  # 注意你的欄位名是 distrit
+        address_query = address_query.eq(
+            "distrit", district
+        )  # 注意你的欄位名是 distrit
     address_ids = [a["address_id"] for a in address_query.execute().data]
 
-    query = supabase.table("house").select("house_id, house_title, price_per_month, house_type, house_address_id, address:house_address_id(full_address)")
+    query = supabase.table("house").select(
+        "house_id, house_title, price_per_month, house_type, house_address_id, address:house_address_id(full_address)"
+    )
     if city or district:
         if address_ids:
             query = query.in_("house_address_id", address_ids)
@@ -515,13 +571,197 @@ def get_home_houses():
             return jsonify({"houses": [], "total": 0})
 
     total = len(query.execute().data)
-    res = query.order("created_time", desc=True).range((page-1)*page_size, page*page_size-1).execute()
+    res = (
+        query.order("created_time", desc=True)
+        .range((page - 1) * page_size, page * page_size - 1)
+        .execute()
+    )
 
     for house in res.data:
-        media = supabase.table("house_media").select("*").eq("house_id", house["house_id"]).order("order_index").limit(1).execute().data
-        house["main_image_url"] = media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        media = (
+            supabase.table("house_media")
+            .select("*")
+            .eq("house_id", house["house_id"])
+            .order("order_index")
+            .limit(1)
+            .execute()
+            .data
+        )
+        house["main_image_url"] = (
+            media[0]["media_url"] if media else "/static/images/placeholder.jpg"
+        )
 
     return jsonify({"houses": res.data, "total": total})
+
+
+@app.route("/api/add_note", methods=["POST"])
+def add_note_route():
+    data = request.get_json()
+    house_id = data.get("house_id")
+    content = data.get("content")
+    user_id = session.get("user_id")  # 從 session 獲取 user_id
+
+    if not user_id:
+        return jsonify({"message": "使用者未登入"}), 401  # Unauthorized
+
+    if not house_id or not content:
+        return jsonify({"message": "缺少房屋ID或備註內容"}), 400
+
+    try:
+        note_data = {
+            "house_id": house_id,
+            "user_id": user_id,
+            "note_content": content,
+            "created_time": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+
+        res_note = supabase.table("view_note").insert(note_data).execute()
+
+        if not res_note.data:
+            return jsonify({"message": "新增備註時資料庫錯誤"}), 500
+
+        new_note = res_note.data[0]
+        return (
+            jsonify(
+                {
+                    "id": new_note.get("note_id"),
+                    "content": new_note.get("note_content"),
+                    "created_at": new_note.get("created_time"),
+                    "user_id": new_note.get("user_id"),
+                }
+            ),
+            201,
+        )
+    except Exception as e:
+        # Log the exception for debugging
+        app.logger.error(f"Error adding note: {e}")
+        return jsonify({"message": f"新增備註時發生伺服器錯誤: {e}"}), 500
+
+
+@app.route("/profile/edit", methods=["GET"])
+def edit_profile():
+    if "user_id" not in session:
+        return redirect(
+            url_for("login_page")
+        )  # 假設你有一個登入頁面的路由叫做 login_page
+
+    user_id = session["user_id"]
+    user_data = (
+        supabase.table("users").select("*").eq("user_id", user_id).execute().data
+    )
+
+    if not user_data:
+        return "User not found", 404
+
+    return render_template("edit_profile.html", user=user_data[0])
+
+
+@app.route("/api/profile/update", methods=["POST"])
+def api_update_profile():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    data = request.form
+    files = request.files
+
+    update_data = {
+        "user_fname": data.get("user_fname"),
+        "user_lname": data.get("user_lname"),
+        "user_name": data.get("user_name"),  # 假設 nickname 對應 user_name
+        "user_email": data.get("user_email"),
+        "user_desc": data.get("user_desc"),  # 新增 user_desc
+    }
+
+    # 過濾掉值為 None 的欄位，避免清空資料庫中已有值的欄位
+    # 調整：如果欄位是 user_desc 且其值為空字串，我們可能希望將其更新為空，而不是保留舊值
+    filtered_update_data = {}
+    for k, v in update_data.items():
+        if v is not None:  # 保留所有非 None 的值
+            if k == "user_desc" and v == "":  # 如果是 user_desc 且為空字串，也加入
+                filtered_update_data[k] = v
+            elif (
+                v != ""
+            ):  # 其他欄位，如果不是空字串才加入 (避免空字串覆蓋原有值，除非是 user_desc)
+                filtered_update_data[k] = v
+        # 如果 v is None，則不加入 filtered_update_data，即保留資料庫原始值
+
+    update_data = filtered_update_data
+
+    new_avatar_url = None
+    if "avatar" in files and files["avatar"].filename != "":
+        avatar = files["avatar"]
+        # 確保使用者帳號存在於 session 中，用於產生檔名
+        user_account = session.get("username", "default_user")
+        filename = f"avatar_{user_id}_{user_account}_{int(datetime.datetime.now().timestamp())}.{avatar.filename.rsplit('.', 1)[-1]}"
+
+        try:
+            file_bytes = avatar.read()
+            # 上傳到 Supabase Storage 的 'dbfinal-avatars' bucket
+            upload_response = supabase.storage.from_("dbfinal-avatars").upload(
+                path=filename,
+                file=file_bytes,
+                file_options={"content-type": avatar.mimetype},
+            )
+
+            # 檢查上傳是否成功 (Supabase Python client v2 可能不直接返回 HTTP 狀態碼，而是拋出異常或返回特定結構)
+            # 這裡假設成功時 upload_response 是一個包含 key 的對象或字典，失敗則可能拋異常或返回 None/Error
+            # 根據 Supabase client 的實際行為調整
+            # if upload_response and hasattr(upload_response, 'key'): # 假設成功時有 key 屬性
+            new_avatar_url = supabase.storage.from_("dbfinal-avatars").get_public_url(
+                filename
+            )
+            update_data["user_avatar_url"] = new_avatar_url
+            # else:
+            #     # 處理上傳失敗的情況，可以記錄錯誤或返回錯誤訊息
+            #     app.logger.error(f"Avatar upload failed: {upload_response})")
+            #     return jsonify({"error": "頭像上傳失敗"}), 500
+
+        except Exception as e:
+            app.logger.error(f"Error uploading avatar: {e}")
+            return jsonify({"error": f"頭像上傳時發生錯誤: {str(e)}"}), 500
+
+    if update_data:
+        try:
+            res = (
+                supabase.table("users")
+                .update(update_data)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            if (
+                not res.data and not new_avatar_url
+            ):  # 如果沒有資料更新且沒有新頭像 (可能沒有任何變更)
+                return jsonify({"message": "沒有變更"}), 200
+            if (
+                not res.data
+                and new_avatar_url
+                and update_data.keys() == {"user_avatar_url"}
+            ):
+                # 只有頭像更新成功
+                return (
+                    jsonify(
+                        {
+                            "message": "個人檔案更新成功！",
+                            "new_avatar_url": new_avatar_url,
+                        }
+                    ),
+                    200,
+                )
+            if not res.data:
+                # 有其他欄位嘗試更新但失敗
+                return jsonify({"error": "更新個人檔案時資料庫錯誤"}), 500
+
+        except Exception as e:
+            app.logger.error(f"Error updating profile in DB: {e}")
+            return jsonify({"error": f"更新個人檔案時發生資料庫錯誤: {str(e)}"}), 500
+
+    response_data = {"message": "個人檔案更新成功！"}
+    if new_avatar_url:
+        response_data["new_avatar_url"] = new_avatar_url
+
+    return jsonify(response_data), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)
