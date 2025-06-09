@@ -18,10 +18,9 @@
         <p>{{ house["full_address"] }}</p>
       </div>
 
-      <!--<div class="media"><img src="/" alt="{{ house['house_title'] }}" /></div>-->
       <div class="media-list">
-        {% for media in media_list %}
-        <img src="{{ media.media_url }}" alt="房屋圖片" />
+        {% for media in house.media_url %}
+        <img src="{{ media }}" alt="房屋圖片" />
         {% endfor %}
       </div>
 

@@ -1,9 +1,14 @@
-import { attachLoginFormHandler } from './login.js';
-import { attachSignupFormHandler } from './signup.js';
-import { setupLandlordFunctions, loadHousesList, houseTypeMap, editHouse } from './landlord.js';
+import { attachLoginFormHandler } from "./login.js";
+import { attachSignupFormHandler } from "./signup.js";
+import {
+  setupLandlordFunctions,
+  loadHousesList,
+  houseTypeMap,
+  editHouse,
+} from "./landlord.js";
 
 const contentMap = {
-    homeLink: `<section class="search-section">
+  homeLink: `<section class="search-section">
                     <h3>找房子</h3>
                     <form id="searchForm">
                         <label>城市：</label>
@@ -25,7 +30,7 @@ const contentMap = {
                     <div class="listing-grid"></div>
                     <div class="pagination"></div>
                 </section>`,
-    loginLink: `<h1>登入</h1>
+  loginLink: `<h1>登入</h1>
                 <form id="loginForm">
                     <label>帳號：</label><br>
                     <input type="text" id="username" required><br><br>
@@ -33,7 +38,7 @@ const contentMap = {
                     <input type="password" id="password" required><br><br>
                     <button type="submit">登入</button>
                 </form>`,
-    signupLink: `<h1>註冊</h1>
+  signupLink: `<h1>註冊</h1>
                 <form id="signupForm">
                     <div id="step1">
                         <label>帳號：</label><br>
@@ -66,9 +71,9 @@ const contentMap = {
                         <button type="submit">送出註冊</button>
                     </div>
                 </form>`,
-    tenantLink: `<h2>租客專區</h2>
+  tenantLink: `<h2>租客專區</h2>
         <button id="logoutBtn">登出</button>`,
-    landlordLink: `
+  landlordLink: `
     <h2>房東專區</h2>
         <div class="house-management">
             <h3>房屋管理</h3>
@@ -80,7 +85,7 @@ const contentMap = {
                 <!-- 房屋列表將動態載入 -->
             </div>
         </div>
-        
+
         <!-- 新增房屋表單（預設隱藏） -->
         <div id="addHouseModal" class="modal" style="display:none;">
             <div class="modal-content">
@@ -136,129 +141,161 @@ const contentMap = {
                 </form>
             </div>
         </div>
-        
-        <button id="logoutBtn">登出</button>`
+
+        <button id="logoutBtn">登出</button>`,
 };
 
 export function setContent(contentId) {
-    const mainContent = document.getElementById('mainContent');
-    mainContent.innerHTML = contentMap[contentId] || ''; // 找不到就顯示空
-    // 判斷是否需要綁定事件
-    if (contentId === 'homeLink') {
-        setTimeout(() => {
-            loadHomeHouses();
-            // 城市-行政區對應
-            const districtMap = {
-                "新竹市": ["東區", "北區", "香山區"],
-                "新竹縣": ["竹北市", "湖口鄉", "新豐鄉", "新埔鎮", "關西鎮", "芎林鄉", "寶山鄉", "竹東鎮", "五峰鄉", "橫山鄉", "尖石鄉", "北埔鄉", "峨眉鄉"]
-            };
-            const citySelect = document.getElementById('citySelect');
-            const districtSelect = document.getElementById('districtSelect');
-            if (citySelect && districtSelect) {
-                citySelect.addEventListener('change', () => {
-                    const city = citySelect.value;
-                    districtSelect.innerHTML = '<option value="">全部</option>';
-                    if (districtMap[city]) {
-                        districtMap[city].forEach(d => {
-                            districtSelect.innerHTML += `<option value="${d}">${d}</option>`;
-                        });
-                    }
-                });
-            }
-            // 搜尋
-            const searchForm = document.getElementById('searchForm');
-            if (searchForm) {
-                searchForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    loadHomeHouses(1); // 搜尋時回到第1頁
-                });
-            }
-            // 重設
-            const resetBtn = document.getElementById('resetBtn');
-            if (resetBtn) {
-                resetBtn.onclick = () => {
-                    citySelect.value = '';
-                    districtSelect.innerHTML = '<option value="">全部</option>';
-                    loadHomeHouses(1);
-                };
-            }
-        }, 0);
-    }
-    if (contentId === 'loginLink') attachLoginFormHandler();
-    if (contentId === 'signupLink') attachSignupFormHandler();
-    if (contentId === 'tenantLink' || contentId === 'landlordLink') {
-        document.getElementById('logoutBtn').onclick = () => window.location.href = '/logout';
-    }
+  const mainContent = document.getElementById("mainContent");
+  mainContent.innerHTML = contentMap[contentId] || ""; // 找不到就顯示空
+  // 判斷是否需要綁定事件
+  if (contentId === "homeLink") {
+    setTimeout(() => {
+      loadHomeHouses();
+      // 城市-行政區對應
+      const districtMap = {
+        新竹市: ["東區", "北區", "香山區"],
+        新竹縣: [
+          "竹北市",
+          "湖口鄉",
+          "新豐鄉",
+          "新埔鎮",
+          "關西鎮",
+          "芎林鄉",
+          "寶山鄉",
+          "竹東鎮",
+          "五峰鄉",
+          "橫山鄉",
+          "尖石鄉",
+          "北埔鄉",
+          "峨眉鄉",
+        ],
+      };
+      const citySelect = document.getElementById("citySelect");
+      const districtSelect = document.getElementById("districtSelect");
+      if (citySelect && districtSelect) {
+        citySelect.addEventListener("change", () => {
+          const city = citySelect.value;
+          districtSelect.innerHTML = '<option value="">全部</option>';
+          if (districtMap[city]) {
+            districtMap[city].forEach((d) => {
+              districtSelect.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+          }
+        });
+      }
+      // 搜尋
+      const searchForm = document.getElementById("searchForm");
+      if (searchForm) {
+        searchForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          loadHomeHouses(1); // 搜尋時回到第1頁
+        });
+      }
+      // 重設
+      const resetBtn = document.getElementById("resetBtn");
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          citySelect.value = "";
+          districtSelect.innerHTML = '<option value="">全部</option>';
+          loadHomeHouses(1);
+        };
+      }
+    }, 0);
+  }
+  if (contentId === "loginLink") attachLoginFormHandler();
+  if (contentId === "signupLink") attachSignupFormHandler();
+  if (contentId === "tenantLink" || contentId === "landlordLink") {
+    document.getElementById("logoutBtn").onclick = () =>
+      fetch("/api/logout", { method: "POST", credentials: "include" }).then(
+        window.location.reload()
+      );
+  }
 
-    // 房東專區特殊處理
-    if (contentId === 'landlordLink') {
-        setupLandlordFunctions();
-        loadHousesList(); // 載入房屋列表
-    }
+  // 房東專區特殊處理
+  if (contentId === "landlordLink") {
+    setupLandlordFunctions();
+    loadHousesList(); // 載入房屋列表
+  }
 }
 
 export async function loadHomeHouses(page = 1) {
-    const grid = document.querySelector('.listing-grid');
-    const pagination = document.querySelector('.pagination');
-    if (!grid) return;
-    grid.innerHTML = '<p>載入中...</p>';
-    pagination.innerHTML = '';
-    const city = document.getElementById('citySelect')?.value || '';
-    const district = document.getElementById('districtSelect')?.value || '';
-    const pageSize = 6;
-    let url = `/api/home_houses?page=${page}&page_size=${pageSize}`;
-    if (city) url += `&city=${encodeURIComponent(city)}`;
-    if (district) url += `&district=${encodeURIComponent(district)}`;
-    try {
-        const res = await fetch(url);
-        const { houses, total } = await res.json();
-        if (!houses.length) {
-            grid.innerHTML = '<p>目前尚無房屋</p>';
-            return;
-        }
-        grid.innerHTML = houses.map(house => `
-            <a href="/house/${house.house_id}" class="listing-item" target="_blank">
+  const grid = document.querySelector(".listing-grid");
+  const pagination = document.querySelector(".pagination");
+  if (!grid) return;
+  grid.innerHTML = "<p>載入中...</p>";
+  pagination.innerHTML = "";
+  const city = document.getElementById("citySelect")?.value || "";
+  const district = document.getElementById("districtSelect")?.value || "";
+  const pageSize = 6;
+  let url = `/api/home_houses?page=${page}&page_size=${pageSize}`;
+  if (city) url += `&city=${encodeURIComponent(city)}`;
+  if (district) url += `&district=${encodeURIComponent(district)}`;
+  try {
+    const res = await fetch(url);
+    const { houses, total } = await res.json();
+    if (!houses.length) {
+      grid.innerHTML = "<p>目前尚無房屋</p>";
+      return;
+    }
+    grid.innerHTML = houses
+      .map(
+        (house) => `
+            <a href="/house/${
+              house.house_id
+            }" class="listing-item" target="_blank">
             <img src="${house.main_image_url}" alt="房屋圖片">
                 <div class="listing-info">
                     <h4>${house.house_title}</h4>
-                    <p>地點：${house.address ? house.address.full_address : ''}</p>
+                    <p>地點：${
+                      house.address ? house.address.full_address : ""
+                    }</p>
                     <p>價格：$${house.price_per_month}/月</p>
-                    <p>類型：${houseTypeMap[house.house_type] || house.house_type}</p>
+                    <p>類型：${
+                      houseTypeMap[house.house_type] || house.house_type
+                    }</p>
                 </div>
             </a>
-        `).join('');
-        // 分頁
-        const totalPages = Math.ceil(total / pageSize);
-        if (totalPages > 1) {
-            pagination.innerHTML = Array.from({length: totalPages}, (_, i) => `
-                <button class="page-btn${i+1 === page ? ' active' : ''}" data-page="${i+1}">${i+1}</button>
-            `).join('');
-            pagination.querySelectorAll('.page-btn').forEach(btn => {
-                btn.onclick = () => loadHomeHouses(Number(btn.dataset.page));
-            });
-        }
-    } catch (e) {
-        grid.innerHTML = '<p>載入失敗</p>';
+        `
+      )
+      .join("");
+    // 分頁
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages > 1) {
+      pagination.innerHTML = Array.from(
+        { length: totalPages },
+        (_, i) => `
+                <button class="page-btn${
+                  i + 1 === page ? " active" : ""
+                }" data-page="${i + 1}">${i + 1}</button>
+            `
+      ).join("");
+      pagination.querySelectorAll(".page-btn").forEach((btn) => {
+        btn.onclick = () => loadHomeHouses(Number(btn.dataset.page));
+      });
     }
+  } catch (e) {
+    grid.innerHTML = "<p>載入失敗</p>";
+  }
 }
 
 export function setHomeContent() {
-    setContent('homeLink');
-    setTimeout(loadHomeHouses, 0); // 等 DOM 渲染完再載入
+  setContent("homeLink");
+  setTimeout(loadHomeHouses, 0); // 等 DOM 渲染完再載入
 }
 
 export function setLoginContent() {
-    setContent('loginLink');
+  setContent("loginLink");
 }
 
 export function setSignupContent() {
-    setContent('signupLink');
+  setContent("signupLink");
 }
 
 export function setTenantContent() {
-    setContent('tenantLink');
+  setContent("tenantLink");
 }
 
 export function setLandlordContent() {
-    setContent('landlordLink');
+  setContent("landlordLink");
 }
