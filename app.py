@@ -106,7 +106,21 @@ def home_page():
 @app.route("/about/<user_id>", methods=["GET"])
 def about_page(user_id):
     user, login = get_user(user_id)
-    houses = get_houses(user_id=user_id, limit=3)
+    houses = get_houses(user_id=user_id, limit=3, photo_limit=1)
+
+    rates = (
+        supabase.table("landlord_profile")
+        .select("rating")
+        .eq("landlord_id", user_id)
+        .execute()
+        .data
+    )
+    print(rates)
+    if rates:
+        score = sum([rate['rating'] for rate in rates]) / len(rates)
+        user["rating"] = f"{score:.1f} - {len(rates)} 位使用者"
+    else:
+        user["rating"] = "暫無使用者評價"
 
     return render_template("about.html", user=user, login=login, houses=houses)
 
@@ -114,7 +128,7 @@ def about_page(user_id):
 @app.route("/about/<user_id>/edit", methods=["GET"])
 def edit_about_page(user_id):
     # TODO 改到前端判斷，如果不是本人就不顯示編輯按鈕
-    if not session:
+    if "user_id" not in session:
         return "Not logged in.", 401
     if int(user_id) != session.get("user_id"):
         return "Unauthorized.", 403
@@ -489,7 +503,6 @@ def api_get_and_update_house(house_id):
         return jsonify({"message": "House update successfully"}), 200
 
 
-# 首頁顯示房屋
 @app.route("/api/home_houses", methods=["GET"])
 def get_home_houses():
     page = int(request.args.get("page", 1))
@@ -689,6 +702,67 @@ def api_update_profile():
         response_data["new_avatar_url"] = new_avatar_url
 
     return jsonify(response_data), 200
+
+
+@app.route("/api/rating/<landlord_id>", methods=["GET", "POST"])
+def rating(landlord_id):
+    if request.method == "GET":
+        if "user_id" not in session:
+            return jsonify({"rate": 0}), 200
+
+        rate = (
+            supabase.table("landlord_profile")
+            .select("rating")
+            .eq("landlord_id", landlord_id)
+            .eq("user_id", session.get("user_id"))
+            .execute()
+            .data
+        )
+        print(landlord_id, session.get("user_id"), rate)
+        if rate:
+            return jsonify({"rate": rate[0]["rating"]}), 200
+        else:
+            return jsonify({"rate": 0}), 200
+    else:
+        if "user_id" not in session:
+            return jsonify({"message": "Not logged in."}), 401
+
+        req = request.get_json()
+        user_id = session.get("user_id")
+        rate = req.get("rate")
+
+        rating_existed = (
+            supabase.table("landlord_profile")
+            .select("*")
+            .eq("landlord_id", landlord_id)
+            .eq("user_id", user_id)
+            .execute()
+            .data
+        )
+
+        if rating_existed:
+            res = (
+                supabase.table("landlord_profile")
+                .update({"rating": rate})
+                .eq("user_id", user_id)
+                .execute()
+                .data
+            )
+            if not res:
+                return jsonify({"message": "Update rate failed."}), 500
+        else:
+            res = (
+                supabase.table("landlord_profile")
+                .insert(
+                    {"landlord_id": landlord_id, "user_id": user_id, "rating": rate}
+                )
+                .execute()
+                .data
+            )
+            if not res:
+                return jsonify({"message": "Insert new rate failed."}), 500
+
+        return jsonify({"message": "Rating successfully."}), 201
 
 
 if __name__ == "__main__":
