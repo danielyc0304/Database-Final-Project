@@ -144,3 +144,13 @@ body {
 .edit-profile-button:hover {
   background-color: #0056b3;
 }
+
+.star {
+  font-size: 2rem;
+  color: #ccc;
+  cursor: pointer;
+}
+.star.hover,
+.star.selected {
+  color: gold;
+}
